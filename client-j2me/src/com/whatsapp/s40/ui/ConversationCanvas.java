@@ -3,6 +3,8 @@ package com.whatsapp.s40.ui;
 import com.whatsapp.s40.WhatsAppMIDlet;
 import com.whatsapp.s40.net.HttpHelper;
 import com.whatsapp.s40.util.MiniJson;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.lcdui.Canvas;
@@ -23,7 +25,6 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
     private int scrollY = 0;
     private int totalContentHeight = 0;
-    private boolean isPolling = false;
 
     // Commands
     private Command cmdSend;
@@ -31,19 +32,25 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     private Command cmdBack;
 
     // Colors
+    private static final int COLOR_STATUS = 0x054C44;
     private static final int COLOR_HEADER = 0x075E54;
-    private static final int COLOR_BG = 0xECE5DD; // Classic WhatsApp background
+    private static final int COLOR_BG = 0xECE5DD; // Classic WhatsApp beige
     private static final int COLOR_BUBBLE_IN = 0xFFFFFF;
     private static final int COLOR_BUBBLE_OUT = 0xDCF8C6;
-    private static final int COLOR_BUBBLE_BORDER = 0xCCCCCC;
-    private static final int COLOR_TEXT = 0x000000;
+    private static final int COLOR_BORDER_IN = 0xD8D8D8;
+    private static final int COLOR_BORDER_OUT = 0xC2E2A8;
+    private static final int COLOR_TEXT = 0x111111;
     private static final int COLOR_TIME = 0x888888;
     private static final int COLOR_TICK = 0x34B7F1;
+    private static final int COLOR_SOFTKEY_BG = 0x111111;
 
     public ConversationCanvas(WhatsAppMIDlet midlet, String chatId, String chatName) {
         this.midlet = midlet;
         this.chatId = chatId;
         this.chatName = chatName;
+
+        // Full Screen Mode
+        setFullScreenMode(true);
 
         cmdSend = new Command("Type / Send", Command.OK, 1);
         cmdRefresh = new Command("Refresh", Command.ITEM, 2);
@@ -56,12 +63,10 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     }
 
     public void startPolling() {
-        isPolling = true;
         fetchMessages();
     }
 
     public void stopPolling() {
-        isPolling = false;
     }
 
     public void fetchMessages() {
@@ -85,7 +90,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     }
 
     private void scrollToBottom() {
-        int viewHeight = getHeight() - 32;
+        int viewHeight = getHeight() - (14 + 28 + 20); // total view height
         if (totalContentHeight > viewHeight) {
             scrollY = totalContentHeight - viewHeight;
         } else {
@@ -97,31 +102,81 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         int w = getWidth();
         int h = getHeight();
 
-        // Background
-        g.setColor(COLOR_BG);
-        g.fillRect(0, 0, w, h);
+        // 1. Nokia System Status Bar (Top 14px)
+        int statusBarH = 14;
+        g.setColor(COLOR_STATUS);
+        g.fillRect(0, 0, w, statusBarH);
 
-        // Header bar
-        int headerHeight = 32;
+        Font fontMicro = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+        g.setFont(fontMicro);
+        g.setColor(0xFFFFFF);
+        g.drawString("3G 📶", 4, 1, Graphics.TOP | Graphics.LEFT);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        int hour = cal.get(Calendar.HOUR);
+        if (hour == 0) hour = 12;
+        int min = cal.get(Calendar.MINUTE);
+        String timeStr = hour + ":" + (min < 10 ? "0" + min : "" + min);
+        g.drawString(timeStr, w / 2, 1, Graphics.TOP | Graphics.HCENTER);
+        g.drawString("🔋 90%", w - 4, 1, Graphics.TOP | Graphics.RIGHT);
+
+        // 2. Chat Header Bar (28px)
+        int headerH = 28;
+        int headerY = statusBarH;
         g.setColor(COLOR_HEADER);
-        g.fillRect(0, 0, w, headerHeight);
+        g.fillRect(0, headerY, w, headerH);
 
-        Font fontHeader = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+        Font fontHeader = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
         g.setFont(fontHeader);
         g.setColor(0xFFFFFF);
         String title = chatName != null ? chatName : "Chat";
-        if (title.length() > 20) title = title.substring(0, 18) + "...";
-        g.drawString(title, 8, 4, Graphics.TOP | Graphics.LEFT);
+        if (title.length() > 18) title = title.substring(0, 16) + "...";
+        g.drawString("◀ " + title, 6, headerY + 4, Graphics.TOP | Graphics.LEFT);
 
         Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         g.setFont(fontSmall);
-        g.drawString("online", 8, 18, Graphics.TOP | Graphics.LEFT);
+        g.setColor(0xA2D2CE);
+        g.drawString("online", 20, headerY + 16, Graphics.TOP | Graphics.LEFT);
 
-        // Message clip area
-        g.setClip(0, headerHeight, w, h - headerHeight);
+        // 3. Bottom Softkey Bar (20px)
+        int softkeyH = 20;
+        int softkeyY = h - softkeyH;
+        g.setColor(COLOR_SOFTKEY_BG);
+        g.fillRect(0, softkeyY, w, softkeyH);
 
-        int currentY = headerHeight + 8 - scrollY;
-        int maxBubbleWidth = (w * 78) / 100;
+        g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
+        g.setColor(0xEEEEEE);
+        g.drawString("Options", 6, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
+        g.setColor(0x25D366);
+        g.drawString("Type / Send", w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
+        g.setColor(0xEEEEEE);
+        g.drawString("Back", w - 6, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
+
+        // 4. Conversation History Area
+        int clipTop = headerY + headerH;
+        int clipHeight = softkeyY - clipTop;
+        g.setClip(0, clipTop, w, clipHeight);
+
+        // Background Wallpaper
+        g.setColor(COLOR_BG);
+        g.fillRect(0, clipTop, w, clipHeight);
+
+        // Wallpaper subtle grid pattern
+        g.setColor(0xE5DDD4);
+        for (int gy = clipTop; gy < softkeyY; gy += 16) {
+            g.drawLine(0, gy, w, gy);
+        }
+
+        int currentY = clipTop + 8 - scrollY;
+        int maxBubbleWidth = (w * 80) / 100;
+
+        if (messages.size() == 0) {
+            g.setColor(0x888888);
+            g.setFont(fontSmall);
+            g.drawString("Say hello to start chat!", w / 2, clipTop + 40, Graphics.TOP | Graphics.HCENTER);
+            g.drawString("Press Center key to type", w / 2, clipTop + 60, Graphics.TOP | Graphics.HCENTER);
+        }
 
         for (int i = 0; i < messages.size(); i++) {
             Hashtable msg = (Hashtable) messages.elementAt(i);
@@ -130,28 +185,28 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
             Vector lines = wrapText(text, maxBubbleWidth - 16, fontSmall);
             int lineHeight = fontSmall.getHeight();
-            int bubbleContentHeight = (lines.size() * lineHeight) + 16;
-            int bubbleWidth = 0;
+            int bubbleContentH = (lines.size() * lineHeight) + 16;
+            int bubbleW = 0;
 
             for (int l = 0; l < lines.size(); l++) {
                 int lw = fontSmall.stringWidth((String) lines.elementAt(l));
-                if (lw > bubbleWidth) bubbleWidth = lw;
+                if (lw > bubbleW) bubbleW = lw;
             }
-            bubbleWidth = Math.max(bubbleWidth + 20, 60);
+            bubbleW = Math.max(bubbleW + 22, 64);
 
             int bubbleX;
             if (fromMe) {
-                bubbleX = w - bubbleWidth - 8;
+                bubbleX = w - bubbleW - 8;
                 g.setColor(COLOR_BUBBLE_OUT);
             } else {
                 bubbleX = 8;
                 g.setColor(COLOR_BUBBLE_IN);
             }
 
-            // Draw bubble with border
-            g.fillRoundRect(bubbleX, currentY, bubbleWidth, bubbleContentHeight, 8, 8);
-            g.setColor(COLOR_BUBBLE_BORDER);
-            g.drawRoundRect(bubbleX, currentY, bubbleWidth, bubbleContentHeight, 8, 8);
+            // Draw bubble body
+            g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
+            g.setColor(fromMe ? COLOR_BORDER_OUT : COLOR_BORDER_IN);
+            g.drawRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
 
             // Draw text lines
             g.setColor(COLOR_TEXT);
@@ -160,17 +215,20 @@ public class ConversationCanvas extends Canvas implements CommandListener {
                 g.drawString((String) lines.elementAt(l), bubbleX + 8, currentY + 4 + (l * lineHeight), Graphics.TOP | Graphics.LEFT);
             }
 
-            // Draw time & tick mark
+            // Draw timestamp & checkmark
             g.setColor(COLOR_TIME);
-            int metaY = currentY + bubbleContentHeight - 12;
+            g.setFont(fontMicro);
+            int metaY = currentY + bubbleContentH - 12;
+
             if (fromMe) {
-                g.drawString("✓✓", bubbleX + bubbleWidth - 14, metaY, Graphics.TOP | Graphics.LEFT);
+                g.setColor(COLOR_TICK);
+                g.drawString("✓✓", bubbleX + bubbleW - 14, metaY, Graphics.TOP | Graphics.LEFT);
             }
 
-            currentY += bubbleContentHeight + 6;
+            currentY += bubbleContentH + 6;
         }
 
-        totalContentHeight = (currentY + scrollY) - (headerHeight + 8);
+        totalContentHeight = (currentY + scrollY) - (clipTop + 8);
 
         // Reset clip
         g.setClip(0, 0, w, h);
@@ -207,7 +265,6 @@ public class ConversationCanvas extends Canvas implements CommandListener {
                 lines.addElement(text.substring(start, spaceIdx));
                 start = spaceIdx + 1;
             } else {
-                // Break word
                 lines.addElement(text.substring(start, start + count - 1));
                 start += (count - 1);
             }
@@ -217,18 +274,55 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
     protected void keyPressed(int keyCode) {
         int ga = getGameAction(keyCode);
-        int viewHeight = getHeight() - 32;
+        int viewHeight = getHeight() - (14 + 28 + 20);
 
-        if (ga == UP) {
-            scrollY = Math.max(0, scrollY - 20);
+        // Nokia Softkeys
+        if (keyCode == -6) {
+            // Left Softkey -> Options
+            openInputBox();
+            return;
+        } else if (keyCode == -7) {
+            // Right Softkey -> Back
+            midlet.showChatList();
+            return;
+        }
+
+        if (ga == UP || keyCode == -1) {
+            scrollY = Math.max(0, scrollY - 24);
             repaint();
-        } else if (ga == DOWN) {
+        } else if (ga == DOWN || keyCode == -2) {
             int maxScroll = Math.max(0, totalContentHeight - viewHeight);
-            scrollY = Math.min(maxScroll, scrollY + 20);
+            scrollY = Math.min(maxScroll, scrollY + 24);
             repaint();
         } else if (ga == FIRE || keyCode == 10 || keyCode == -5) {
             openInputBox();
         }
+    }
+
+    protected void pointerPressed(int x, int y) {
+        int w = getWidth();
+        int h = getHeight();
+
+        // Softkey row
+        if (y >= h - 20) {
+            if (x < w / 3) {
+                openInputBox();
+            } else if (x > (2 * w) / 3) {
+                midlet.showChatList();
+            } else {
+                openInputBox();
+            }
+            return;
+        }
+
+        // Top bar back button
+        if (y < 42 && x < 50) {
+            midlet.showChatList();
+            return;
+        }
+
+        // Tap on chat area opens input
+        openInputBox();
     }
 
     private void openInputBox() {
@@ -254,7 +348,6 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     }
 
     private void sendMessage(final String text) {
-        // Optimistically add to UI
         Hashtable temp = new Hashtable();
         temp.put("fromMe", new Boolean(true));
         temp.put("text", text);
