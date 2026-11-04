@@ -226,7 +226,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
             int maxScroll = Math.max(0, totalContentHeight - viewHeight);
             scrollY = Math.min(maxScroll, scrollY + 20);
             repaint();
-        } else if (ga == FIRE || keyCode == 10) {
+        } else if (ga == FIRE || keyCode == 10 || keyCode == -5) {
             openInputBox();
         }
     }
