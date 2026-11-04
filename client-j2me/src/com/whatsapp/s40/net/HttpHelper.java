@@ -15,6 +15,7 @@ public class HttpHelper {
             conn = (HttpConnection) Connector.open(url);
             conn.setRequestMethod(HttpConnection.GET);
             conn.setRequestProperty("User-Agent", "Nokia-S40-WhatsApp/1.0");
+            conn.setRequestProperty("Bypass-Tunnel-Reminder", "true");
 
             int rc = conn.getResponseCode();
             if (rc != HttpConnection.HTTP_OK) {
@@ -47,6 +48,7 @@ public class HttpHelper {
             conn = (HttpConnection) Connector.open(url);
             conn.setRequestMethod(HttpConnection.POST);
             conn.setRequestProperty("User-Agent", "Nokia-S40-WhatsApp/1.0");
+            conn.setRequestProperty("Bypass-Tunnel-Reminder", "true");
             conn.setRequestProperty("Content-Type", "application/json");
 
             byte[] bytes = jsonBody.getBytes("UTF-8");
