@@ -5,5 +5,5 @@ MIDlet-1: WhatsApp, /icon.png, com.whatsapp.s40.WhatsAppMIDlet
 MicroEdition-Profile: MIDP-2.0
 MicroEdition-Configuration: CLDC-1.1
 MIDlet-Jar-URL: WhatsApp-S40.jar
-MIDlet-Jar-Size: 27608
+MIDlet-Jar-Size: 26463
 MIDlet-Description: Official WhatsApp client for Nokia Series 40 with Multi-Device Cloud Link.

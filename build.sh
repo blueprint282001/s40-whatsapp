@@ -2,19 +2,23 @@
 set -e
 
 echo "===================================================="
-echo " Building Nokia S40 WhatsApp Client (.JAR / .JAD)"
+echo " Building Nokia S40 WhatsApp Client (CLDC 1.1 / MIDP 2.0)"
 echo "===================================================="
 
 mkdir -p bin build
 
-echo "[1/3] Compiling Java ME sources..."
+echo "[1/4] Compiling Java ME sources with ECJ (Target 1.3 / Class Version 45.3)..."
 find client-j2me/src -name "*.java" > sources.txt
-javac -source 1.7 -target 1.7 -cp "lib/cldcapi11.jar:lib/midpapi20.jar" -d bin @sources.txt
+java -jar lib/ecj.jar -1.3 -bootclasspath "lib/cldcapi11.jar:lib/midpapi20.jar" -d bin @sources.txt
 
-echo "[2/3] Packaging WhatsApp-S40.jar..."
-jar cvfm build/WhatsApp-S40.jar client-j2me/META-INF/MANIFEST.MF -C bin . -C client-j2me/res .
+echo "[2/4] Preverifying with ProGuard for MicroEdition..."
+rm -f build/WhatsApp-S40.jar
+java -jar lib/proguard5.jar -injars bin -outjars build/WhatsApp-S40.jar -libraryjars "lib/cldcapi11.jar:lib/midpapi20.jar" -microedition -dontoptimize -dontobfuscate -keep "public class * extends javax.microedition.midlet.MIDlet"
 
-echo "[3/3] Generating JAD descriptor..."
+echo "[3/4] Updating Manifest and Icon..."
+jar uvfm build/WhatsApp-S40.jar client-j2me/META-INF/MANIFEST.MF -C client-j2me/res .
+
+echo "[4/4] Updating JAD descriptor..."
 JAR_SIZE=$(wc -c < build/WhatsApp-S40.jar | tr -d ' ')
 
 cat <<EOF > build/WhatsApp-S40.jad
@@ -32,6 +36,6 @@ EOF
 echo ""
 echo "Build successful!"
 echo "Output:"
-echo "  - build/WhatsApp-S40.jar (${JAR_SIZE} bytes)"
+echo "  - build/WhatsApp-S40.jar (${JAR_SIZE} bytes, Class Version 45.3 Preverified)"
 echo "  - build/WhatsApp-S40.jad"
 echo "===================================================="
