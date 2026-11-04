@@ -30,10 +30,8 @@ let currentQR = null;
 let currentPairingCode = null;
 let connectionStatus = 'connecting'; // 'connecting' | 'connected' | 'disconnected'
 let userProfile = null;
-
-// In-memory chat & message cache for fast S40 delivery
-const chatsMap = new Map(); // jid -> { id, name, lastMessage, timestamp, unreadCount }
-const messagesMap = new Map(); // jid -> [ { id, text, sender, fromMe, timestamp, status } ]
+let isConnecting = false;
+let reconnectTimer = null;
 
 // Helper: Format JID to friendly display
 function formatJidName(jid, pushName) {
@@ -61,9 +59,29 @@ function extractMessageText(msg) {
     return '[Media / Message]';
 }
 
+function cleanupSocket() {
+    if (sock) {
+        try {
+            sock.ev.removeAllListeners('connection.update');
+            sock.ev.removeAllListeners('creds.update');
+            sock.ev.removeAllListeners('messages.upsert');
+            sock.end(undefined);
+        } catch (e) {}
+        sock = null;
+    }
+}
+
 // Initialize WhatsApp Baileys connection
 async function initWhatsApp() {
+    if (isConnecting) {
+        console.log('[WhatsApp] Already initializing, skipping duplicate call.');
+        return;
+    }
+    isConnecting = true;
+
     try {
+        cleanupSocket();
+
         const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
         const { version, isLatest } = await fetchLatestBaileysVersion();
         console.log(`[WhatsApp] Using WA version v${version.join('.')}, isLatest: ${isLatest}`);
@@ -90,14 +108,14 @@ async function initWhatsApp() {
 
             if (connection === 'close') {
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+                const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+                const isReplaced = statusCode === DisconnectReason.connectionReplaced;
                 connectionStatus = 'disconnected';
-                console.log(`[WhatsApp] Connection closed (status: ${statusCode}). Reconnecting: ${shouldReconnect}`);
-                
-                if (shouldReconnect) {
-                    setTimeout(initWhatsApp, 3000);
-                } else {
-                    // Logged out: clean auth directory
+                console.log(`[WhatsApp] Connection closed (status: ${statusCode}). Replaced: ${isReplaced}, LoggedOut: ${isLoggedOut}`);
+
+                cleanupSocket();
+
+                if (isLoggedOut) {
                     console.log('[WhatsApp] Logged out. Cleaning session...');
                     try {
                         fs.rmSync(AUTH_DIR, { recursive: true, force: true });
@@ -105,7 +123,15 @@ async function initWhatsApp() {
                     currentQR = null;
                     currentPairingCode = null;
                     userProfile = null;
-                    setTimeout(initWhatsApp, 2000);
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(initWhatsApp, 3000);
+                } else if (isReplaced) {
+                    console.log('[WhatsApp] Connection replaced by another session. Pausing 10s...');
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(initWhatsApp, 10000);
+                } else {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(initWhatsApp, 4000);
                 }
             } else if (connection === 'open') {
                 connectionStatus = 'connected';
@@ -165,7 +191,10 @@ async function initWhatsApp() {
 
     } catch (err) {
         console.error('[WhatsApp] Initialization error:', err);
-        setTimeout(initWhatsApp, 5000);
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(initWhatsApp, 5000);
+    } finally {
+        isConnecting = false;
     }
 }
 
