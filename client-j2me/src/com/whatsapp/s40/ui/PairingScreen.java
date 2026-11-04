@@ -54,6 +54,13 @@ public class PairingScreen extends Form implements CommandListener {
 
     public void commandAction(Command c, Displayable d) {
         if (c == cmdGetCode) {
+            String serverUrl = midlet.getServerUrl();
+            if (serverUrl.indexOf("localhost") != -1 || serverUrl.indexOf("127.0.0.1") != -1) {
+                lblCode.setText("Set Server URL in Settings!");
+                midlet.showAlert("URL Error", "Server is set to localhost! Nokia C2-01 needs your public Cloud or Tunnel URL. Go to Options -> Settings.", AlertType.WARNING);
+                return;
+            }
+
             final String phone = txtPhone.getString().trim();
             if (phone.length() < 7) {
                 midlet.showAlert("Error", "Please enter a valid phone number with country code.", AlertType.WARNING);

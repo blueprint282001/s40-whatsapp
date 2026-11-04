@@ -12,14 +12,13 @@ public class HttpHelper {
         HttpConnection conn = null;
         InputStream is = null;
         try {
-            conn = (HttpConnection) Connector.open(url, Connector.READ, true);
+            conn = (HttpConnection) Connector.open(url);
             conn.setRequestMethod(HttpConnection.GET);
             conn.setRequestProperty("User-Agent", "Nokia-S40-WhatsApp/1.0");
-            conn.setRequestProperty("Connection", "close");
 
             int rc = conn.getResponseCode();
             if (rc != HttpConnection.HTTP_OK) {
-                throw new Exception("HTTP error " + rc);
+                throw new Exception("HTTP " + rc);
             }
 
             is = conn.openInputStream();
@@ -45,11 +44,10 @@ public class HttpHelper {
         OutputStream os = null;
         InputStream is = null;
         try {
-            conn = (HttpConnection) Connector.open(url, Connector.READ_WRITE, true);
+            conn = (HttpConnection) Connector.open(url);
             conn.setRequestMethod(HttpConnection.POST);
             conn.setRequestProperty("User-Agent", "Nokia-S40-WhatsApp/1.0");
-            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            conn.setRequestProperty("Connection", "close");
+            conn.setRequestProperty("Content-Type", "application/json");
 
             byte[] bytes = jsonBody.getBytes("UTF-8");
             conn.setRequestProperty("Content-Length", Integer.toString(bytes.length));
@@ -60,7 +58,7 @@ public class HttpHelper {
 
             int rc = conn.getResponseCode();
             if (rc != HttpConnection.HTTP_OK && rc != HttpConnection.HTTP_CREATED) {
-                throw new Exception("HTTP error " + rc);
+                throw new Exception("HTTP " + rc);
             }
 
             is = conn.openInputStream();
