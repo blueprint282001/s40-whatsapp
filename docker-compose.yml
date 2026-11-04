@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  s40-whatsapp-bridge:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: s40-whatsapp-bridge
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - ./server/session_auth:/app/session_auth
+      - ./build:/app/../build

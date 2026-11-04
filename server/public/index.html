@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokia S40 WhatsApp Cloud Bridge</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="nokia-header">
+            <div class="header-left">
+                <span class="nokia-logo">NOKIA</span>
+                <span class="header-title">WhatsApp S40 Bridge</span>
+            </div>
+            <div class="header-status">
+                <span id="statusIndicator" class="status-dot disconnected"></span>
+                <span id="statusText">Checking...</span>
+            </div>
+        </header>
+
+        <main class="content-grid">
+            <!-- Left Card: Linking & Pairing -->
+            <section class="card link-card">
+                <h2>1. Link with Android / Apple (iPhone)</h2>
+                <p class="subtitle">Apne WhatsApp account se link karne ke liye Pairing Code ya QR Code use karein:</p>
+
+                <!-- Method A: Pairing Code -->
+                <div class="pair-box">
+                    <h3>Option A: 8-Digit Pairing Code (Recommended)</h3>
+                    <p class="step-guide">Apna phone number (country code ke sath jaise 919876543210) enter karein:</p>
+                    <div class="input-group">
+                        <input type="text" id="phoneInput" placeholder="e.g. 919876543210" />
+                        <button id="btnPair" class="btn btn-primary">Get Pairing Code</button>
+                    </div>
+
+                    <div id="pairingCodeContainer" class="pairing-code-display hidden">
+                        <span class="code-label">Enter this code on WhatsApp:</span>
+                        <div id="pairingCodeVal" class="code-value">---- ----</div>
+                        <ol class="pairing-instructions">
+                            <li>Apne Android / iPhone me WhatsApp kholein</li>
+                            <li><strong>Settings</strong> &gt; <strong>Linked Devices</strong> me jayein</li>
+                            <li><strong>Link a Device</strong> &gt; <strong>"Link with phone number instead"</strong> par tap karein</li>
+                            <li>Upar diya gaya 8-digit code enter karein</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="divider"><span>YA</span></div>
+
+                <!-- Method B: QR Code -->
+                <div class="qr-box">
+                    <h3>Option B: Scan QR Code</h3>
+                    <div id="qrContainer" class="qr-wrapper">
+                        <div id="qrLoading" class="loading-spinner">Loading QR...</div>
+                        <img id="qrImage" class="qr-img hidden" alt="WhatsApp QR Code" />
+                    </div>
+                    <p class="qr-instructions">WhatsApp &gt; Linked Devices &gt; Link a Device &gt; Scan this QR</p>
+                </div>
+
+                <div class="action-footer">
+                    <button id="btnLogout" class="btn btn-danger hidden">Unlink Account (Logout)</button>
+                </div>
+            </section>
+
+            <!-- Right Card: Nokia S40 App Download & Live Test -->
+            <section class="card app-card">
+                <h2>2. Nokia S40 Java (.JAR) App</h2>
+                <p class="subtitle">Yeh app direct apne Nokia phone par install karein:</p>
+                
+                <div class="download-box">
+                    <div class="nokia-phone-badge">
+                        <span class="phone-icon">📱</span>
+                        <div>
+                            <strong>WhatsApp S40 Client (J2ME)</strong>
+                            <p>Compatible with: Nokia C3, X2-01, Asha 200/201/205/210/302/515 & all S40 devices</p>
+                        </div>
+                    </div>
+                    <div class="download-buttons">
+                        <a href="/download/WhatsApp-S40.jar" class="btn btn-download">
+                            <span>⬇ Download WhatsApp-S40.jar</span>
+                        </a>
+                        <a href="/download/WhatsApp-S40.jad" class="btn btn-secondary">
+                            <span>Download .JAD</span>
+                        </a>
+                    </div>
+                    <div class="install-tip">
+                        <strong>Install Karne Ka Tareeqa:</strong>
+                        <ol>
+                            <li>Nokia phone ke default browser se is link ko open karein aur direct download karein.</li>
+                            <li>Ya Bluetooth / USB Data Cable se apne phone ke Memory Card me copy karein aur phone me open karein.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Chat Test Console -->
+                <div class="test-chat-box">
+                    <h3>3. Live Chat Test & Status</h3>
+                    <div class="server-url-box">
+                        <span class="label">Server API URL for Phone:</span>
+                        <code id="serverUrlDisplay">http://localhost:3000</code>
+                    </div>
+
+                    <div id="chatPreview" class="chat-preview-box">
+                        <div class="chat-header-bar">
+                            <span id="activeChatName">Select Chat or Type Number</span>
+                        </div>
+                        <div id="messagesList" class="messages-list">
+                            <div class="msg-placeholder">WhatsApp link hote hi yahan messages dikhenge.</div>
+                        </div>
+                        <div class="chat-input-bar">
+                            <input type="text" id="targetJidInput" placeholder="Phone with country code (e.g. 919876543210)" />
+                            <input type="text" id="testMsgInput" placeholder="Type message..." />
+                            <button id="btnSendTest" class="btn btn-send">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Nokia S40 WhatsApp Cloud Bridge &copy; 2026. Designed for classic Series 40 phones.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

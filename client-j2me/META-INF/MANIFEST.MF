@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+MIDlet-Name: WhatsApp S40
+MIDlet-Version: 2.16.5
+MIDlet-Vendor: WhatsApp Inc.
+MIDlet-1: WhatsApp, /icon.png, com.whatsapp.s40.WhatsAppMIDlet
+MicroEdition-Profile: MIDP-2.0
+MicroEdition-Configuration: CLDC-1.1
+MIDlet-Description: Official WhatsApp client for Nokia Series 40 with Multi-Device Cloud Link.
