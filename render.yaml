@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: s40-whatsapp-bridge
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
