@@ -3,8 +3,6 @@ package com.whatsapp.s40.ui;
 import com.whatsapp.s40.WhatsAppMIDlet;
 import com.whatsapp.s40.net.HttpHelper;
 import com.whatsapp.s40.util.MiniJson;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.lcdui.Canvas;
@@ -13,6 +11,7 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 
 public class ChatListCanvas extends Canvas implements CommandListener {
 
@@ -21,38 +20,41 @@ public class ChatListCanvas extends Canvas implements CommandListener {
     private int selectedIndex = 0;
     private int scrollOffset = 0;
     private boolean isLoading = false;
-    private String statusMsg = "Connected";
 
-    // Standard Commands
+    // Authentic WhatsApp Graphics
+    private Image imgHeaderLogo;
+    private Image imgAvatar;
+    private Image imgTickDouble;
+    private Image imgCamera;
+    private Image imgMic;
+
+    // Commands
     private Command cmdOpen;
     private Command cmdRefresh;
     private Command cmdLink;
     private Command cmdSettings;
     private Command cmdExit;
 
-    // S40 WhatsApp Theme Colors
-    private static final int COLOR_STATUS_BG = 0x054C44;
+    // Official WhatsApp Brand Colors
     private static final int COLOR_HEADER_BG = 0x075E54;
-    private static final int COLOR_HEADER_TEXT = 0xFFFFFF;
-    private static final int COLOR_SUBHEADER_BG = 0x128C7E;
+    private static final int COLOR_TAB_BG = 0x128C7E;
+    private static final int COLOR_TAB_INACTIVE = 0x8CD2CE;
     private static final int COLOR_BG = 0xFFFFFF;
-    private static final int COLOR_ROW_HIGHLIGHT = 0xE1F3E9;
+    private static final int COLOR_ROW_HIGHLIGHT = 0xEEF7F2;
+    private static final int COLOR_ROW_ACCENT = 0x075E54;
     private static final int COLOR_TEXT_NAME = 0x111111;
-    private static final int COLOR_TEXT_MSG = 0x666666;
-    private static final int COLOR_TIME = 0x25D366;
+    private static final int COLOR_TEXT_SNIPPET = 0x667781;
+    private static final int COLOR_TIME_GRAY = 0x8696A0;
+    private static final int COLOR_TIME_UNREAD = 0x25D366;
     private static final int COLOR_BADGE = 0x25D366;
-    private static final int COLOR_DIVIDER = 0xEEEEEE;
-    private static final int COLOR_SOFTKEY_BG = 0x111111;
-
-    // Contact avatar colors
-    private static final int[] AVATAR_COLORS = {
-        0x128C7E, 0x00A884, 0x34B7F1, 0x9B59B6, 0xE67E22, 0xE74C3C, 0x27AE60, 0x34495E
-    };
+    private static final int COLOR_DIVIDER = 0xE9EDEF;
+    private static final int COLOR_BOTTOM_BAR = 0x1F2C34;
 
     public ChatListCanvas(WhatsAppMIDlet midlet) {
         this.midlet = midlet;
-        // Full screen mode for Nokia C2-01 / X2-00
         setFullScreenMode(true);
+
+        loadAssets();
 
         cmdOpen = new Command("Open", Command.OK, 1);
         cmdRefresh = new Command("Refresh", Command.ITEM, 2);
@@ -68,19 +70,25 @@ public class ChatListCanvas extends Canvas implements CommandListener {
         setCommandListener(this);
     }
 
+    private void loadAssets() {
+        try { imgHeaderLogo = Image.createImage("/icon_header.png"); } catch (Exception e) {}
+        try { imgAvatar = Image.createImage("/avatar_default.png"); } catch (Exception e) {}
+        try { imgTickDouble = Image.createImage("/tick_double.png"); } catch (Exception e) {}
+        try { imgCamera = Image.createImage("/icon_camera.png"); } catch (Exception e) {}
+        try { imgMic = Image.createImage("/icon_mic.png"); } catch (Exception e) {}
+    }
+
     public void setChats(Vector list) {
         this.chatList = list != null ? list : new Vector();
         if (selectedIndex >= chatList.size()) {
             selectedIndex = Math.max(0, chatList.size() - 1);
         }
         isLoading = false;
-        statusMsg = chatList.size() + " Chats";
         repaint();
     }
 
     public void fetchChats() {
         isLoading = true;
-        statusMsg = "Syncing...";
         repaint();
 
         new Thread(new Runnable() {
@@ -95,97 +103,82 @@ public class ChatListCanvas extends Canvas implements CommandListener {
                     }
                 } catch (Exception e) {
                     isLoading = false;
-                    statusMsg = "Offline";
                     repaint();
                 }
             }
         }).start();
     }
 
-    private int getAvatarColor(String name) {
-        if (name == null || name.length() == 0) return AVATAR_COLORS[0];
-        int hash = 0;
-        for (int i = 0; i < name.length(); i++) {
-            hash += name.charAt(i);
-        }
-        return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-    }
-
     protected void paint(Graphics g) {
         int w = getWidth();
         int h = getHeight();
 
-        // 1. Nokia System Status Bar (Top 14px)
-        int statusBarH = 14;
-        g.setColor(COLOR_STATUS_BG);
-        g.fillRect(0, 0, w, statusBarH);
-
-        Font fontMicro = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-        g.setFont(fontMicro);
-        g.setColor(0xFFFFFF);
-        g.drawString("3G 📶", 4, 1, Graphics.TOP | Graphics.LEFT);
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        int hour = cal.get(Calendar.HOUR);
-        if (hour == 0) hour = 12;
-        int min = cal.get(Calendar.MINUTE);
-        String timeStr = hour + ":" + (min < 10 ? "0" + min : "" + min);
-        g.drawString(timeStr, w / 2, 1, Graphics.TOP | Graphics.HCENTER);
-        g.drawString("🔋 90%", w - 4, 1, Graphics.TOP | Graphics.RIGHT);
-
-        // 2. WhatsApp Main Header (24px)
-        int headerH = 24;
-        int headerY = statusBarH;
+        // 1. WhatsApp Signature Header (32px)
+        int headerH = 32;
         g.setColor(COLOR_HEADER_BG);
-        g.fillRect(0, headerY, w, headerH);
+        g.fillRect(0, 0, w, headerH);
 
-        Font fontHeader = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
-        g.setFont(fontHeader);
-        g.setColor(COLOR_HEADER_TEXT);
-        g.drawString("WhatsApp", 6, headerY + 4, Graphics.TOP | Graphics.LEFT);
+        // Official WhatsApp Logo Icon
+        if (imgHeaderLogo != null) {
+            g.drawImage(imgHeaderLogo, 8, 6, Graphics.TOP | Graphics.LEFT);
+        }
 
-        Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        g.setFont(fontSmall);
-        g.setColor(0xA2D2CE);
-        g.drawString(statusMsg, w - 6, headerY + 6, Graphics.TOP | Graphics.RIGHT);
+        // WhatsApp Brand Title
+        Font fontTitle = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+        g.setFont(fontTitle);
+        g.setColor(0xFFFFFF);
+        g.drawString("WhatsApp", imgHeaderLogo != null ? 32 : 10, 7, Graphics.TOP | Graphics.LEFT);
 
-        // 3. Tab Bar (20px): CHATS | CONTACTS | STATUS
-        int tabH = 18;
-        int tabY = headerY + headerH;
-        g.setColor(COLOR_SUBHEADER_BG);
+        // Search 🔍 Icon on Right
+        int searchX = w - 30;
+        int searchY = 10;
+        g.setColor(0xFFFFFF);
+        g.drawArc(searchX, searchY, 7, 7, 0, 360);
+        g.drawLine(searchX + 6, searchY + 6, searchX + 10, searchY + 10);
+
+        // Menu 3-dots icon
+        g.fillRect(w - 12, 10, 2, 2);
+        g.fillRect(w - 12, 15, 2, 2);
+        g.fillRect(w - 12, 20, 2, 2);
+
+        // 2. Tab Bar: CHATS | STATUS | CALLS (24px)
+        int tabH = 24;
+        int tabY = headerH;
+        g.setColor(COLOR_TAB_BG);
         g.fillRect(0, tabY, w, tabH);
 
-        g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
-        g.setColor(0xFFFFFF);
-        g.drawString("CHATS", 12, tabY + 2, Graphics.TOP | Graphics.LEFT);
-        // Active tab underline
-        g.setColor(0xFFFFFF);
-        g.fillRect(10, tabY + tabH - 2, 45, 2);
+        Font fontTab = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+        g.setFont(fontTab);
 
-        g.setColor(0x80D8CE);
-        g.drawString("CONTACTS", w / 2, tabY + 2, Graphics.TOP | Graphics.HCENTER);
-        g.drawString("STATUS", w - 12, tabY + 2, Graphics.TOP | Graphics.RIGHT);
+        // Active Tab: CHATS
+        g.setColor(0xFFFFFF);
+        g.drawString("CHATS", 14, tabY + 4, Graphics.TOP | Graphics.LEFT);
+        // Active Tab Underline (3px pure white)
+        g.fillRect(10, tabY + tabH - 3, 50, 3);
 
-        // 4. Bottom Softkey Bar (20px)
+        // Inactive Tabs
+        g.setColor(COLOR_TAB_INACTIVE);
+        g.drawString("STATUS", w / 2, tabY + 4, Graphics.TOP | Graphics.HCENTER);
+        g.drawString("CALLS", w - 16, tabY + 4, Graphics.TOP | Graphics.RIGHT);
+
+        // 3. Bottom Softkey Bar (20px)
         int softkeyH = 20;
         int softkeyY = h - softkeyH;
-        g.setColor(COLOR_SOFTKEY_BG);
+        g.setColor(COLOR_BOTTOM_BAR);
         g.fillRect(0, softkeyY, w, softkeyH);
 
         g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
-        g.setColor(0xEEEEEE);
-        g.drawString("Options", 6, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
+        g.setColor(0xDFE5E7);
+        g.drawString("Options", 8, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
         g.setColor(COLOR_BADGE);
         g.drawString("Open", w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
-        g.setColor(0xEEEEEE);
-        g.drawString("Exit", w - 6, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
+        g.setColor(0xDFE5E7);
+        g.drawString("Exit", w - 8, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
 
-        // 5. Chat List Area
+        // 4. Chat List Scrollable Area
         int listTop = tabY + tabH;
-        int listBottom = softkeyY;
-        int listHeight = listBottom - listTop;
-        int rowH = 46;
+        int listHeight = softkeyY - listTop;
+        int rowH = 48;
         int visibleRows = listHeight / rowH;
 
         g.setClip(0, listTop, w, listHeight);
@@ -195,10 +188,11 @@ public class ChatListCanvas extends Canvas implements CommandListener {
         g.fillRect(0, listTop, w, listHeight);
 
         if (chatList == null || chatList.size() == 0) {
-            g.setColor(COLOR_TEXT_MSG);
+            g.setColor(COLOR_TEXT_SNIPPET);
+            Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
             g.setFont(fontSmall);
-            g.drawString(isLoading ? "Connecting to WhatsApp..." : "No recent chats.", w / 2, listTop + 40, Graphics.TOP | Graphics.HCENTER);
-            g.drawString("Press Options -> Refresh", w / 2, listTop + 65, Graphics.TOP | Graphics.HCENTER);
+            g.drawString(isLoading ? "Connecting to WhatsApp..." : "No recent chats.", w / 2, listTop + 45, Graphics.TOP | Graphics.HCENTER);
+            g.drawString("Press Options -> Refresh", w / 2, listTop + 68, Graphics.TOP | Graphics.HCENTER);
             g.setClip(0, 0, w, h);
             return;
         }
@@ -211,66 +205,89 @@ public class ChatListCanvas extends Canvas implements CommandListener {
         }
 
         int currentY = listTop;
-        for (int i = scrollOffset; i < chatList.size() && currentY < listBottom; i++) {
+        Font fontName = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+        Font fontSnippet = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        Font fontMicro = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+
+        for (int i = scrollOffset; i < chatList.size() && currentY < softkeyY; i++) {
             Hashtable chat = (Hashtable) chatList.elementAt(i);
             boolean isSelected = (i == selectedIndex);
 
-            // Row background highlight
+            // Row highlight
             if (isSelected) {
                 g.setColor(COLOR_ROW_HIGHLIGHT);
                 g.fillRect(0, currentY, w, rowH);
-                g.setColor(COLOR_HEADER_BG);
-                g.fillRect(0, currentY, 3, rowH); // left green accent
+                g.setColor(COLOR_ROW_ACCENT);
+                g.fillRect(0, currentY, 3, rowH); // deep green left indicator
+            }
+
+            // Authentic WhatsApp Contact Avatar (32x32)
+            int avatarX = 8;
+            int avatarY = currentY + 8;
+            if (imgAvatar != null) {
+                g.drawImage(imgAvatar, avatarX, avatarY, Graphics.TOP | Graphics.LEFT);
+            } else {
+                g.setColor(0xDFE5E7);
+                g.fillRoundRect(avatarX, avatarY, 32, 32, 32, 32);
             }
 
             String name = MiniJson.getString(chat, "name", "Chat");
+            String lastMsg = MiniJson.getString(chat, "lastMessage", "");
+            int unread = MiniJson.getInt(chat, "unread", 0);
 
-            // Circular Avatar with distinct colors
-            int avatarX = 8;
-            int avatarY = currentY + 7;
-            int avatarSize = 32;
-            g.setColor(getAvatarColor(name));
-            g.fillRoundRect(avatarX, avatarY, avatarSize, avatarSize, avatarSize, avatarSize);
-
-            // Avatar initial
-            char initial = name.length() > 0 ? Character.toUpperCase(name.charAt(0)) : 'W';
-            g.setFont(fontHeader);
-            g.setColor(0xFFFFFF);
-            g.drawChar(initial, avatarX + 11, avatarY + 7, Graphics.TOP | Graphics.LEFT);
+            int textX = avatarX + 32 + 10;
 
             // Contact Name
-            int textX = avatarX + avatarSize + 8;
-            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
+            g.setFont(fontName);
             g.setColor(COLOR_TEXT_NAME);
             String displayName = name;
             if (displayName.length() > 16) displayName = displayName.substring(0, 14) + "...";
-            g.drawString(displayName, textX, currentY + 6, Graphics.TOP | Graphics.LEFT);
+            g.drawString(displayName, textX, currentY + 7, Graphics.TOP | Graphics.LEFT);
 
-            // Last message snippet
-            String lastMsg = MiniJson.getString(chat, "lastMessage", "");
+            // Timestamp (Top Right)
+            g.setFont(fontMicro);
+            g.setColor(unread > 0 ? COLOR_TIME_UNREAD : COLOR_TIME_GRAY);
+            g.drawString("10:45", w - 8, currentY + 8, Graphics.TOP | Graphics.RIGHT);
+
+            // Last message snippet & status tick
+            int snippetY = currentY + 27;
+            int snippetStartX = textX;
+
+            // Check if outgoing message (starts with You: or has tick)
+            if (lastMsg.startsWith("[Photo]") && imgCamera != null) {
+                g.drawImage(imgCamera, snippetStartX, snippetY + 1, Graphics.TOP | Graphics.LEFT);
+                snippetStartX += 16;
+                lastMsg = "Photo";
+            } else if (lastMsg.startsWith("[Voice Note]") && imgMic != null) {
+                g.drawImage(imgMic, snippetStartX, snippetY + 1, Graphics.TOP | Graphics.LEFT);
+                snippetStartX += 14;
+                lastMsg = "Voice message (0:14)";
+            } else if (imgTickDouble != null) {
+                // Outgoing message double-tick preview
+                g.drawImage(imgTickDouble, snippetStartX, snippetY + 3, Graphics.TOP | Graphics.LEFT);
+                snippetStartX += 18;
+            }
+
             if (lastMsg.length() > 22) lastMsg = lastMsg.substring(0, 20) + "...";
-            g.setFont(fontSmall);
-            g.setColor(COLOR_TEXT_MSG);
-            g.drawString(lastMsg, textX, currentY + 25, Graphics.TOP | Graphics.LEFT);
+            g.setFont(fontSnippet);
+            g.setColor(COLOR_TEXT_SNIPPET);
+            g.drawString(lastMsg, snippetStartX, snippetY, Graphics.TOP | Graphics.LEFT);
 
-            // Timestamp / Unread badge
-            int unread = MiniJson.getInt(chat, "unread", 0);
+            // Unread Count Badge (Right side circle)
             if (unread > 0) {
-                int badgeSize = 16;
+                int badgeSize = 18;
                 int badgeX = w - badgeSize - 8;
-                int badgeY = currentY + 15;
+                int badgeY = currentY + 24;
                 g.setColor(COLOR_BADGE);
                 g.fillRoundRect(badgeX, badgeY, badgeSize, badgeSize, badgeSize, badgeSize);
                 g.setColor(0xFFFFFF);
-                g.setFont(fontMicro);
-                g.drawString(String.valueOf(unread), badgeX + 4, badgeY + 1, Graphics.TOP | Graphics.LEFT);
-            } else {
-                g.setColor(COLOR_TIME);
-                g.setFont(fontMicro);
-                g.drawString("10:45", w - 8, currentY + 7, Graphics.TOP | Graphics.RIGHT);
+                g.setFont(fontName);
+                String unreadStr = String.valueOf(unread);
+                int numW = fontName.stringWidth(unreadStr);
+                g.drawString(unreadStr, badgeX + (badgeSize - numW) / 2, badgeY + 2, Graphics.TOP | Graphics.LEFT);
             }
 
-            // Divider
+            // Divider line
             g.setColor(COLOR_DIVIDER);
             g.drawLine(textX, currentY + rowH - 1, w, currentY + rowH - 1);
 
@@ -283,17 +300,18 @@ public class ChatListCanvas extends Canvas implements CommandListener {
     protected void keyPressed(int keyCode) {
         int ga = getGameAction(keyCode);
 
-        // Nokia C2-01 / X2-00 Softkeys & D-Pad
+        // Nokia Softkey Bindings
         if (keyCode == -6) {
-            // Left Softkey -> Options
-            showOptionsMenu();
+            // LSK: Options
+            fetchChats();
             return;
         } else if (keyCode == -7) {
-            // Right Softkey -> Exit
+            // RSK: Exit
             midlet.exitApp();
             return;
         }
 
+        // Navi-Key Up/Down
         if (ga == UP || keyCode == -1) {
             if (selectedIndex > 0) {
                 selectedIndex--;
@@ -313,10 +331,10 @@ public class ChatListCanvas extends Canvas implements CommandListener {
         int w = getWidth();
         int h = getHeight();
 
-        // Check softkeys tap
-        if (y >= h - 24) {
+        // Bottom Softkeys
+        if (y >= h - 22) {
             if (x < w / 3) {
-                showOptionsMenu();
+                fetchChats();
             } else if (x > (2 * w) / 3) {
                 midlet.exitApp();
             } else {
@@ -325,9 +343,9 @@ public class ChatListCanvas extends Canvas implements CommandListener {
             return;
         }
 
-        // List row tap
-        int listTop = 14 + 24 + 18;
-        int rowH = 46;
+        // List row click
+        int listTop = 32 + 24;
+        int rowH = 48;
         if (y >= listTop && y < h - 20) {
             int clicked = scrollOffset + (y - listTop) / rowH;
             if (chatList != null && clicked >= 0 && clicked < chatList.size()) {
@@ -350,11 +368,6 @@ public class ChatListCanvas extends Canvas implements CommandListener {
                 midlet.openConversation(chatId, chatName);
             }
         }
-    }
-
-    private void showOptionsMenu() {
-        // Can display options form or trigger refresh
-        fetchChats();
     }
 
     public void commandAction(Command c, Displayable d) {
