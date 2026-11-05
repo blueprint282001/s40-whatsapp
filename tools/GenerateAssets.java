@@ -20,8 +20,40 @@ public class GenerateAssets {
         generateHeaderIcon(new File(resDir, "icon_header.png"));
         generateCameraIcon(new File(resDir, "icon_camera.png"));
         generateMicIcon(new File(resDir, "icon_mic.png"));
+        generateGroupAvatar(new File(resDir, "avatar_group.png"));
 
         System.out.println("All authentic WhatsApp assets generated successfully!");
+    }
+
+    // Authentic WhatsApp Group Avatar (32x32)
+    private static void generateGroupAvatar(File file) throws Exception {
+        int size = 32;
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Circular background in #00A884 (WhatsApp group teal background)
+        g.setColor(new Color(0x12, 0x8C, 0x7E));
+        g.fillOval(0, 0, size, size);
+
+        // Silhouette color #FFFFFF
+        g.setColor(Color.WHITE);
+
+        // Center figure
+        g.fillOval(12, 5, 8, 8);
+        g.fillArc(8, 14, 16, 14, 0, 180);
+
+        // Left figure
+        g.setColor(new Color(0xCC, 0xEE, 0xE9));
+        g.fillOval(5, 8, 6, 6);
+        g.fillArc(2, 16, 12, 12, 0, 180);
+
+        // Right figure
+        g.fillOval(21, 8, 6, 6);
+        g.fillArc(18, 16, 12, 12, 0, 180);
+
+        g.dispose();
+        ImageIO.write(img, "png", file);
     }
 
     // 1. WhatsApp Classic Doodle Background (120x120 seamless tile)

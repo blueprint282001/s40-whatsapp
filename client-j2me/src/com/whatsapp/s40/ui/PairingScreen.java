@@ -4,7 +4,6 @@ import com.whatsapp.s40.WhatsAppMIDlet;
 import com.whatsapp.s40.net.HttpHelper;
 import com.whatsapp.s40.util.MiniJson;
 import java.util.Hashtable;
-import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;

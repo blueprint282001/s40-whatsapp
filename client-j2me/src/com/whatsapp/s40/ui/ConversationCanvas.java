@@ -5,13 +5,16 @@ import com.whatsapp.s40.net.HttpHelper;
 import com.whatsapp.s40.util.MiniJson;
 import java.util.Hashtable;
 import java.util.Vector;
+import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Choice;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 
@@ -20,6 +23,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     private WhatsAppMIDlet midlet;
     private String chatId;
     private String chatName;
+    private boolean isGroup;
     private Vector messages = new Vector();
 
     private int scrollY = 0;
@@ -28,12 +32,15 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     // Authentic Graphics
     private Image imgDoodle;
     private Image imgAvatar;
+    private Image imgGroupAvatar;
     private Image imgTickBlue;
     private Image imgTickDouble;
+    private Image imgCamera;
+    private Image imgMic;
 
     // Commands
     private Command cmdSend;
-    private Command cmdRefresh;
+    private Command cmdOptions;
     private Command cmdBack;
 
     // Official WhatsApp Colors
@@ -49,20 +56,26 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     private static final int COLOR_DATE_PILL_BG = 0xDDE8ED;
     private static final int COLOR_DATE_PILL_TEXT = 0x54656F;
 
+    // Group Participant Sender Colors
+    private static final int[] GROUP_COLORS = {
+        0x1F7A8C, 0xD8315B, 0x3E8914, 0x9D4EDD, 0xEA580C, 0x0284C7, 0x7E22CE
+    };
+
     public ConversationCanvas(WhatsAppMIDlet midlet, String chatId, String chatName) {
         this.midlet = midlet;
         this.chatId = chatId;
         this.chatName = chatName;
+        this.isGroup = (chatId != null && chatId.indexOf("@g.us") != -1);
 
         setFullScreenMode(true);
         loadAssets();
 
         cmdSend = new Command("Type / Send", Command.OK, 1);
-        cmdRefresh = new Command("Refresh", Command.ITEM, 2);
+        cmdOptions = new Command("Options", Command.ITEM, 2);
         cmdBack = new Command("Back", Command.BACK, 3);
 
         addCommand(cmdSend);
-        addCommand(cmdRefresh);
+        addCommand(cmdOptions);
         addCommand(cmdBack);
         setCommandListener(this);
     }
@@ -70,8 +83,11 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     private void loadAssets() {
         try { imgDoodle = Image.createImage("/doodle_bg.png"); } catch (Exception e) {}
         try { imgAvatar = Image.createImage("/avatar_default.png"); } catch (Exception e) {}
+        try { imgGroupAvatar = Image.createImage("/avatar_group.png"); } catch (Exception e) {}
         try { imgTickBlue = Image.createImage("/tick_blue.png"); } catch (Exception e) {}
         try { imgTickDouble = Image.createImage("/tick_double.png"); } catch (Exception e) {}
+        try { imgCamera = Image.createImage("/icon_camera.png"); } catch (Exception e) {}
+        try { imgMic = Image.createImage("/icon_mic.png"); } catch (Exception e) {}
     }
 
     public void startPolling() {
@@ -125,17 +141,18 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         g.setColor(0xFFFFFF);
         g.drawString("◀", 6, 11, Graphics.TOP | Graphics.LEFT);
 
-        // Small Contact Avatar in Header
+        // Contact / Group Avatar in Header
         int avatarH = 24;
-        if (imgAvatar != null) {
-            // Draw avatar thumbnail
+        if (isGroup && imgGroupAvatar != null) {
+            g.drawImage(imgGroupAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
+        } else if (imgAvatar != null) {
             g.drawImage(imgAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
         } else {
             g.setColor(0xDFE5E7);
             g.fillRoundRect(18, 6, avatarH, avatarH, avatarH, avatarH);
         }
 
-        // Contact Name
+        // Contact / Group Subject Name
         Font fontName = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
         g.setFont(fontName);
         g.setColor(0xFFFFFF);
@@ -143,13 +160,13 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         if (title.length() > 16) title = title.substring(0, 14) + "...";
         g.drawString(title, 46, 5, Graphics.TOP | Graphics.LEFT);
 
-        // Online Status
+        // Subtitle (online status / group indicator)
         Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         g.setFont(fontSmall);
         g.setColor(COLOR_STATUS_TEXT);
-        g.drawString("online", 46, 19, Graphics.TOP | Graphics.LEFT);
+        g.drawString(isGroup ? "Group info" : "online", 46, 19, Graphics.TOP | Graphics.LEFT);
 
-        // Header right icons: Call & Menu
+        // Header right 3-dots menu
         g.setColor(0xFFFFFF);
         g.fillRect(w - 12, 11, 2, 2);
         g.fillRect(w - 12, 16, 2, 2);
@@ -174,7 +191,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         int clipHeight = softkeyY - clipTop;
         g.setClip(0, clipTop, w, clipHeight);
 
-        // Tile authentic WhatsApp doodle wallpaper
+        // Seamless tile authentic WhatsApp doodle wallpaper
         if (imgDoodle != null) {
             int dw = imgDoodle.getWidth();
             int dh = imgDoodle.getHeight();
@@ -190,7 +207,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
         int currentY = clipTop + 8 - scrollY;
 
-        // Date Separator: TODAY
+        // Date Separator Pill: TODAY
         int pillW = 60;
         int pillH = 16;
         int pillX = (w - pillW) / 2;
@@ -210,26 +227,38 @@ public class ConversationCanvas extends Canvas implements CommandListener {
             g.drawString("Press Center key to type a message", w / 2, currentY + 50, Graphics.TOP | Graphics.HCENTER);
         }
 
+        Font fontSender = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+
         for (int i = 0; i < messages.size(); i++) {
             Hashtable msg = (Hashtable) messages.elementAt(i);
             boolean fromMe = MiniJson.getBoolean(msg, "fromMe", false);
             String text = MiniJson.getString(msg, "text", "");
+            String participant = MiniJson.getString(msg, "participantName", "Participant");
+            boolean isPhoto = MiniJson.getBoolean(msg, "isPhoto", false);
+            boolean isVoice = MiniJson.getBoolean(msg, "isVoice", false);
+
+            boolean showSenderHeader = isGroup && !fromMe;
+            int senderHeaderH = showSenderHeader ? 14 : 0;
 
             Vector lines = wrapText(text, maxBubbleWidth - 16, fontSmall);
             int lineHeight = fontSmall.getHeight();
-            int bubbleContentH = (lines.size() * lineHeight) + 16;
-            int bubbleW = 0;
+            int bubbleContentH = (lines.size() * lineHeight) + 16 + senderHeaderH;
+            if (isPhoto || isVoice) bubbleContentH += 14;
 
+            int bubbleW = 0;
+            if (showSenderHeader) {
+                bubbleW = fontSender.stringWidth(participant);
+            }
             for (int l = 0; l < lines.size(); l++) {
                 int lw = fontSmall.stringWidth((String) lines.elementAt(l));
                 if (lw > bubbleW) bubbleW = lw;
             }
-            bubbleW = Math.max(bubbleW + 28, 70);
+            bubbleW = Math.max(bubbleW + 28, 80);
 
             int bubbleX;
             if (fromMe) {
                 bubbleX = w - bubbleW - 10;
-                // Outgoing Green Bubble
+                // Outgoing Olive Green Bubble
                 g.setColor(COLOR_BUBBLE_OUT);
                 g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
                 g.setColor(COLOR_BORDER_OUT);
@@ -257,17 +286,43 @@ public class ConversationCanvas extends Canvas implements CommandListener {
                 g.drawLine(bubbleX - 5, currentY + 8, bubbleX, currentY + 12);
             }
 
+            int contentY = currentY + 4;
+
+            // In Group Chat: draw participant sender name in color!
+            if (showSenderHeader) {
+                int cIdx = Math.abs(participant.hashCode()) % GROUP_COLORS.length;
+                g.setColor(GROUP_COLORS[cIdx]);
+                g.setFont(fontSender);
+                g.drawString(participant, bubbleX + 8, contentY, Graphics.TOP | Graphics.LEFT);
+                contentY += senderHeaderH;
+            }
+
+            // Media Preview Indicators
+            if (isPhoto && imgCamera != null) {
+                g.drawImage(imgCamera, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
+                g.setColor(COLOR_TEXT);
+                g.setFont(fontSmall);
+                g.drawString("Photo", bubbleX + 26, contentY, Graphics.TOP | Graphics.LEFT);
+                contentY += 14;
+            } else if (isVoice && imgMic != null) {
+                g.drawImage(imgMic, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
+                g.setColor(COLOR_TEXT);
+                g.setFont(fontSmall);
+                g.drawString("Voice note (0:15)", bubbleX + 24, contentY, Graphics.TOP | Graphics.LEFT);
+                contentY += 14;
+            }
+
             // Text lines
             g.setColor(COLOR_TEXT);
             g.setFont(fontSmall);
             for (int l = 0; l < lines.size(); l++) {
-                g.drawString((String) lines.elementAt(l), bubbleX + 8, currentY + 4 + (l * lineHeight), Graphics.TOP | Graphics.LEFT);
+                g.drawString((String) lines.elementAt(l), bubbleX + 8, contentY + (l * lineHeight), Graphics.TOP | Graphics.LEFT);
             }
 
             // Timestamp at bottom-right
             int metaY = currentY + bubbleContentH - 12;
             g.setColor(COLOR_TIME);
-            g.drawString("10:45", bubbleX + bubbleW - (fromMe ? 28 : 12), metaY, Graphics.TOP | Graphics.RIGHT);
+            g.drawString("11:35", bubbleX + bubbleW - (fromMe ? 28 : 12), metaY, Graphics.TOP | Graphics.RIGHT);
 
             // Double Blue Tick for outgoing messages
             if (fromMe) {
@@ -328,9 +383,10 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
         // Nokia Softkeys
         if (keyCode == -6) {
-            openInputBox();
+            showConversationOptions();
             return;
         } else if (keyCode == -7) {
+            stopPolling();
             midlet.showChatList();
             return;
         }
@@ -354,8 +410,9 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         // Bottom Softkeys
         if (y >= h - 22) {
             if (x < w / 3) {
-                openInputBox();
+                showConversationOptions();
             } else if (x > (2 * w) / 3) {
+                stopPolling();
                 midlet.showChatList();
             } else {
                 openInputBox();
@@ -365,6 +422,7 @@ public class ConversationCanvas extends Canvas implements CommandListener {
 
         // Top Header back button
         if (y < 36 && x < 45) {
+            stopPolling();
             midlet.showChatList();
             return;
         }
@@ -394,10 +452,77 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         midlet.getDisplay().setCurrent(tb);
     }
 
+    private void openMediaSendPrompt() {
+        final TextBox tb = new TextBox("Send Photo Caption", "", 120, TextField.ANY);
+        Command cmdSendPhoto = new Command("Send Photo", Command.OK, 1);
+        Command cmdCancel = new Command("Cancel", Command.CANCEL, 2);
+        tb.addCommand(cmdSendPhoto);
+        tb.addCommand(cmdCancel);
+
+        tb.setCommandListener(new CommandListener() {
+            public void commandAction(Command c, Displayable d) {
+                if (c.getCommandType() == Command.OK) {
+                    final String cap = tb.getString().trim();
+                    sendPhotoMessage(cap);
+                }
+                midlet.getDisplay().setCurrent(ConversationCanvas.this);
+            }
+        });
+
+        midlet.getDisplay().setCurrent(tb);
+    }
+
+    private void showConversationOptions() {
+        final List opt = new List("Options", Choice.IMPLICIT);
+        opt.append("Type Message", null);
+        opt.append("Attach / Send Photo", null);
+        opt.append("View Chat / Group Info", null);
+        opt.append("Refresh Messages", null);
+        opt.append("Clear Messages", null);
+        opt.append("Back to Chats", null);
+
+        Command cmdSelect = new Command("Select", Command.OK, 1);
+        Command cmdBack = new Command("Back", Command.BACK, 2);
+        opt.addCommand(cmdSelect);
+        opt.addCommand(cmdBack);
+
+        opt.setCommandListener(new CommandListener() {
+            public void commandAction(Command c, Displayable d) {
+                if (c == List.SELECT_COMMAND || c.getCommandType() == Command.OK) {
+                    int idx = opt.getSelectedIndex();
+                    midlet.getDisplay().setCurrent(ConversationCanvas.this);
+
+                    if (idx == 0) {
+                        openInputBox();
+                    } else if (idx == 1) {
+                        openMediaSendPrompt();
+                    } else if (idx == 2) {
+                        String info = "Chat: " + chatName + "\nJID: " + chatId + "\nType: " + (isGroup ? "Group Chat" : "Direct Message");
+                        midlet.showAlert("Info", info, AlertType.INFO);
+                    } else if (idx == 3) {
+                        fetchMessages();
+                    } else if (idx == 4) {
+                        messages.removeAllElements();
+                        repaint();
+                    } else if (idx == 5) {
+                        stopPolling();
+                        midlet.showChatList();
+                    }
+                } else if (c.getCommandType() == Command.BACK) {
+                    midlet.getDisplay().setCurrent(ConversationCanvas.this);
+                }
+            }
+        });
+
+        midlet.getDisplay().setCurrent(opt);
+    }
+
     private void sendMessage(final String text) {
         Hashtable temp = new Hashtable();
         temp.put("fromMe", new Boolean(true));
         temp.put("text", text);
+        temp.put("isPhoto", new Boolean(false));
+        temp.put("isVoice", new Boolean(false));
         temp.put("timestamp", new Long(System.currentTimeMillis()));
         messages.addElement(temp);
         scrollToBottom();
@@ -415,11 +540,34 @@ public class ConversationCanvas extends Canvas implements CommandListener {
         }).start();
     }
 
+    private void sendPhotoMessage(final String caption) {
+        Hashtable temp = new Hashtable();
+        temp.put("fromMe", new Boolean(true));
+        temp.put("text", "[Photo] " + caption);
+        temp.put("isPhoto", new Boolean(true));
+        temp.put("isVoice", new Boolean(false));
+        temp.put("timestamp", new Long(System.currentTimeMillis()));
+        messages.addElement(temp);
+        scrollToBottom();
+        repaint();
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    String url = midlet.getServerUrl() + "/api/send-media";
+                    String jsonBody = "{\"chatId\":\"" + chatId + "\",\"caption\":\"" + caption + "\"}";
+                    HttpHelper.post(url, jsonBody);
+                    fetchMessages();
+                } catch (Exception e) {}
+            }
+        }).start();
+    }
+
     public void commandAction(Command c, Displayable d) {
         if (c == cmdSend) {
             openInputBox();
-        } else if (c == cmdRefresh) {
-            fetchMessages();
+        } else if (c == cmdOptions) {
+            showConversationOptions();
         } else if (c == cmdBack) {
             stopPolling();
             midlet.showChatList();

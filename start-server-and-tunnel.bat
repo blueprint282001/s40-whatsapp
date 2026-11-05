@@ -19,13 +19,13 @@ echo [2/2] Starting Public Internet Tunnel...
 echo.
 echo ====================================================
 echo  Fixed Public URL for Nokia C2-01:
-echo  http://nokia-c201-wa.loca.lt
+echo  http://nokias40wa2026.loca.lt
 echo ====================================================
 echo.
 
 :tunnel_loop
 echo [%time%] Connecting tunnel...
-call npx.cmd --yes localtunnel --port 3000 --subdomain nokia-c201-wa
+call npx.cmd --yes localtunnel --port 3000 --subdomain nokias40wa2026
 echo [%time%] Tunnel disconnected. Reconnecting in 3 seconds...
 timeout /t 3 /nobreak >nul
 goto tunnel_loop
