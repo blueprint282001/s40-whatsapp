@@ -21,8 +21,58 @@ public class GenerateAssets {
         generateCameraIcon(new File(resDir, "icon_camera.png"));
         generateMicIcon(new File(resDir, "icon_mic.png"));
         generateGroupAvatar(new File(resDir, "avatar_group.png"));
+        generateAppIcon(new File(resDir, "icon.png"), 48);
 
         System.out.println("All authentic WhatsApp assets generated successfully!");
+    }
+
+    // Official WhatsApp Application Icon (48x48 for Nokia S40 Grid)
+    private static void generateAppIcon(File file, int size) throws Exception {
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // Subtle shadow / glow
+        g.setColor(new Color(0, 0, 0, 40));
+        g.fillOval(3, 4, size - 6, size - 6);
+
+        // WhatsApp Gradient Green Bubble
+        GradientPaint gp = new GradientPaint(
+            size / 2, 2, new Color(0x25, 0xD3, 0x66),
+            size / 2, size - 2, new Color(0x12, 0x8C, 0x7E)
+        );
+        g.setPaint(gp);
+        g.fillOval(2, 2, size - 5, size - 5);
+
+        // Speech bubble tail pointing bottom-left
+        int[] tx = { 5, 18, 12 };
+        int[] ty = { size - 4, size - 12, size - 4 };
+        g.fillPolygon(tx, ty, 3);
+
+        // White border ring around bubble
+        g.setColor(new Color(255, 255, 255, 80));
+        g.setStroke(new BasicStroke(1.2f));
+        g.drawOval(2, 2, size - 5, size - 5);
+
+        // Pure White WhatsApp Telephone Receiver Handset
+        g.setColor(Color.WHITE);
+        g.setStroke(new BasicStroke(3.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+        // Curved handset handle
+        g.drawArc(14, 14, 20, 20, -45, 115);
+
+        // Earpiece (top right)
+        g.fillOval(25, 12, 8, 8);
+        // Mouthpiece (bottom left)
+        g.fillOval(12, 25, 8, 8);
+
+        // Subtle gloss reflection at top
+        g.setColor(new Color(255, 255, 255, 90));
+        g.fillArc(6, 4, size - 12, 14, 0, 180);
+
+        g.dispose();
+        ImageIO.write(img, "png", file);
     }
 
     // Authentic WhatsApp Group Avatar (32x32)

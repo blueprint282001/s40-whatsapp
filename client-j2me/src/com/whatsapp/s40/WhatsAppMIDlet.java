@@ -22,7 +22,7 @@ public class WhatsAppMIDlet extends MIDlet {
     private Display display;
     private ChatListCanvas chatListCanvas;
     private ConversationCanvas currentConversation;
-    private String serverUrl = "http://cast-deposit-vic-riding.trycloudflare.com";
+    private String serverUrl = "http://s40-whatsapp-bridge.onrender.com";
     private Timer pollTimer;
 
     private static final String RS_NAME = "wa_s40_cfg";
@@ -159,7 +159,11 @@ public class WhatsAppMIDlet extends MIDlet {
             if (rs.getNumRecords() > 0) {
                 byte[] data = rs.getRecord(1);
                 if (data != null && data.length > 0) {
-                    serverUrl = new String(data, "UTF-8");
+                    String saved = new String(data, "UTF-8");
+                    // If saved is an old dead tunnel URL, discard and keep Render cloud URL
+                    if (saved.indexOf("trycloudflare") == -1 && saved.indexOf("loca.lt") == -1) {
+                        serverUrl = saved;
+                    }
                 }
             }
         } catch (Exception e) {
