@@ -1,5 +1,5 @@
 @echo off
-title Nokia S40 WhatsApp Bridge Server & Auto-Tunnel
+title Nokia S40 WhatsApp Bridge Server & Cloudflare Tunnel
 echo ====================================================
 echo  Starting Nokia S40 WhatsApp Cloud Bridge & Tunnel
 echo ====================================================
@@ -14,18 +14,14 @@ start /b node server.js
 :: 2. Wait 3 seconds
 timeout /t 3 /nobreak >nul
 
-:: 3. Run Localtunnel with auto-restart loop
-echo [2/2] Starting Public Internet Tunnel...
+:: 3. Run Cloudflare Tunnel
+echo [2/2] Starting High-Speed Cloudflare Tunnel...
 echo.
 echo ====================================================
-echo  Fixed Public URL for Nokia C2-01:
-echo  http://nokias40wa2026.loca.lt
+echo  Active Public URL for Nokia C2-01:
+echo  http://cast-deposit-vic-riding.trycloudflare.com
 echo ====================================================
 echo.
 
-:tunnel_loop
-echo [%time%] Connecting tunnel...
-call npx.cmd --yes localtunnel --port 3000 --subdomain nokias40wa2026
-echo [%time%] Tunnel disconnected. Reconnecting in 3 seconds...
-timeout /t 3 /nobreak >nul
-goto tunnel_loop
+cd /d "%~dp0tools"
+cloudflared.exe tunnel --url http://localhost:3000

@@ -22,7 +22,7 @@ public class WhatsAppMIDlet extends MIDlet {
     private Display display;
     private ChatListCanvas chatListCanvas;
     private ConversationCanvas currentConversation;
-    private String serverUrl = "http://nokias40wa2026.loca.lt";
+    private String serverUrl = "http://cast-deposit-vic-riding.trycloudflare.com";
     private Timer pollTimer;
 
     private static final String RS_NAME = "wa_s40_cfg";

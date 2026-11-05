@@ -16,3 +16,5 @@ sources.txt
 # OS Files
 .DS_Store
 Thumbs.db
+
+tools/cloudflared.exe
