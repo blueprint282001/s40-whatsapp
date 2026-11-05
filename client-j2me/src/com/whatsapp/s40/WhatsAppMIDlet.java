@@ -116,9 +116,20 @@ public class WhatsAppMIDlet extends MIDlet {
     }
 
     public void showAlert(String title, String message, AlertType type) {
-        Alert alert = new Alert(title, message, null, type);
-        alert.setTimeout(3000);
-        display.setCurrent(alert, display.getCurrent());
+        try {
+            Alert alert = new Alert(title, message, null, type);
+            alert.setTimeout(3000);
+            Displayable cur = (display != null) ? display.getCurrent() : null;
+            if (cur != null && !(cur instanceof Alert)) {
+                display.setCurrent(alert, cur);
+            } else if (chatListCanvas != null) {
+                display.setCurrent(alert, chatListCanvas);
+            } else {
+                display.setCurrent(alert);
+            }
+        } catch (Throwable t) {
+            // Safe fallback
+        }
     }
 
     public void exitApp() {

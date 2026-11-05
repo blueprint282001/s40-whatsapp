@@ -127,217 +127,229 @@ public class ConversationCanvas extends Canvas implements CommandListener {
     }
 
     protected void paint(Graphics g) {
-        int w = getWidth();
-        int h = getHeight();
+        try {
+            int w = getWidth();
+            int h = getHeight();
 
-        // 1. WhatsApp Conversation Header (36px)
-        int headerH = 36;
-        g.setColor(COLOR_HEADER);
-        g.fillRect(0, 0, w, headerH);
+            // 1. WhatsApp Conversation Header (36px)
+            int headerH = 36;
+            g.setColor(COLOR_HEADER);
+            g.fillRect(0, 0, w, headerH);
 
-        // Back Arrow ◀
-        Font fontArrow = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-        g.setFont(fontArrow);
-        g.setColor(0xFFFFFF);
-        g.drawString("◀", 6, 11, Graphics.TOP | Graphics.LEFT);
+            // Back Arrow ◀
+            Font fontArrow = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+            g.setFont(fontArrow);
+            g.setColor(0xFFFFFF);
+            g.drawString("◀", 6, 11, Graphics.TOP | Graphics.LEFT);
 
-        // Contact / Group Avatar in Header
-        int avatarH = 24;
-        if (isGroup && imgGroupAvatar != null) {
-            g.drawImage(imgGroupAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
-        } else if (imgAvatar != null) {
-            g.drawImage(imgAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
-        } else {
-            g.setColor(0xDFE5E7);
-            g.fillRoundRect(18, 6, avatarH, avatarH, avatarH, avatarH);
-        }
-
-        // Contact / Group Subject Name
-        Font fontName = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-        g.setFont(fontName);
-        g.setColor(0xFFFFFF);
-        String title = chatName != null ? chatName : "Chat";
-        if (title.length() > 16) title = title.substring(0, 14) + "...";
-        g.drawString(title, 46, 5, Graphics.TOP | Graphics.LEFT);
-
-        // Subtitle (online status / group indicator)
-        Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        g.setFont(fontSmall);
-        g.setColor(COLOR_STATUS_TEXT);
-        g.drawString(isGroup ? "Group info" : "online", 46, 19, Graphics.TOP | Graphics.LEFT);
-
-        // Header right 3-dots menu
-        g.setColor(0xFFFFFF);
-        g.fillRect(w - 12, 11, 2, 2);
-        g.fillRect(w - 12, 16, 2, 2);
-        g.fillRect(w - 12, 21, 2, 2);
-
-        // 2. Bottom Softkey Bar (20px)
-        int softkeyH = 20;
-        int softkeyY = h - softkeyH;
-        g.setColor(COLOR_BOTTOM_BAR);
-        g.fillRect(0, softkeyY, w, softkeyH);
-
-        g.setFont(fontArrow);
-        g.setColor(0xDFE5E7);
-        g.drawString("Options", 8, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
-        g.setColor(0x25D366);
-        g.drawString("Type / Send", w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
-        g.setColor(0xDFE5E7);
-        g.drawString("Back", w - 8, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
-
-        // 3. Conversation Area with Wallpaper
-        int clipTop = headerH;
-        int clipHeight = softkeyY - clipTop;
-        g.setClip(0, clipTop, w, clipHeight);
-
-        // Seamless tile authentic WhatsApp doodle wallpaper
-        if (imgDoodle != null) {
-            int dw = imgDoodle.getWidth();
-            int dh = imgDoodle.getHeight();
-            for (int dy = clipTop; dy < softkeyY; dy += dh) {
-                for (int dx = 0; dx < w; dx += dw) {
-                    g.drawImage(imgDoodle, dx, dy, Graphics.TOP | Graphics.LEFT);
-                }
-            }
-        } else {
-            g.setColor(0xECE5DD);
-            g.fillRect(0, clipTop, w, clipHeight);
-        }
-
-        int currentY = clipTop + 8 - scrollY;
-
-        // Date Separator Pill: TODAY
-        int pillW = 60;
-        int pillH = 16;
-        int pillX = (w - pillW) / 2;
-        g.setColor(COLOR_DATE_PILL_BG);
-        g.fillRoundRect(pillX, currentY, pillW, pillH, 8, 8);
-        g.setColor(COLOR_DATE_PILL_TEXT);
-        g.setFont(fontSmall);
-        g.drawString("TODAY", pillX + 12, currentY + 2, Graphics.TOP | Graphics.LEFT);
-
-        currentY += pillH + 10;
-
-        int maxBubbleWidth = (w * 78) / 100;
-
-        if (messages.size() == 0) {
-            g.setColor(COLOR_DATE_PILL_TEXT);
-            g.drawString("Messages are end-to-end encrypted", w / 2, currentY + 30, Graphics.TOP | Graphics.HCENTER);
-            g.drawString("Press Center key to type a message", w / 2, currentY + 50, Graphics.TOP | Graphics.HCENTER);
-        }
-
-        Font fontSender = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-
-        for (int i = 0; i < messages.size(); i++) {
-            Hashtable msg = (Hashtable) messages.elementAt(i);
-            boolean fromMe = MiniJson.getBoolean(msg, "fromMe", false);
-            String text = MiniJson.getString(msg, "text", "");
-            String participant = MiniJson.getString(msg, "participantName", "Participant");
-            boolean isPhoto = MiniJson.getBoolean(msg, "isPhoto", false);
-            boolean isVoice = MiniJson.getBoolean(msg, "isVoice", false);
-
-            boolean showSenderHeader = isGroup && !fromMe;
-            int senderHeaderH = showSenderHeader ? 14 : 0;
-
-            Vector lines = wrapText(text, maxBubbleWidth - 16, fontSmall);
-            int lineHeight = fontSmall.getHeight();
-            int bubbleContentH = (lines.size() * lineHeight) + 16 + senderHeaderH;
-            if (isPhoto || isVoice) bubbleContentH += 14;
-
-            int bubbleW = 0;
-            if (showSenderHeader) {
-                bubbleW = fontSender.stringWidth(participant);
-            }
-            for (int l = 0; l < lines.size(); l++) {
-                int lw = fontSmall.stringWidth((String) lines.elementAt(l));
-                if (lw > bubbleW) bubbleW = lw;
-            }
-            bubbleW = Math.max(bubbleW + 28, 80);
-
-            int bubbleX;
-            if (fromMe) {
-                bubbleX = w - bubbleW - 10;
-                // Outgoing Olive Green Bubble
-                g.setColor(COLOR_BUBBLE_OUT);
-                g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
-                g.setColor(COLOR_BORDER_OUT);
-                g.drawRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
-
-                // Speech Tail pointing right
-                g.setColor(COLOR_BUBBLE_OUT);
-                g.fillTriangle(bubbleX + bubbleW, currentY + 2, bubbleX + bubbleW + 5, currentY + 8, bubbleX + bubbleW, currentY + 12);
-                g.setColor(COLOR_BORDER_OUT);
-                g.drawLine(bubbleX + bubbleW, currentY + 2, bubbleX + bubbleW + 5, currentY + 8);
-                g.drawLine(bubbleX + bubbleW + 5, currentY + 8, bubbleX + bubbleW, currentY + 12);
+            // Contact / Group Avatar in Header
+            int avatarH = 24;
+            if (isGroup && imgGroupAvatar != null) {
+                g.drawImage(imgGroupAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
+            } else if (imgAvatar != null) {
+                g.drawImage(imgAvatar, 18, 6, Graphics.TOP | Graphics.LEFT);
             } else {
-                bubbleX = 10;
-                // Incoming White Bubble
-                g.setColor(COLOR_BUBBLE_IN);
-                g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
-                g.setColor(COLOR_BORDER_IN);
-                g.drawRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
-
-                // Speech Tail pointing left
-                g.setColor(COLOR_BUBBLE_IN);
-                g.fillTriangle(bubbleX, currentY + 2, bubbleX - 5, currentY + 8, bubbleX, currentY + 12);
-                g.setColor(COLOR_BORDER_IN);
-                g.drawLine(bubbleX, currentY + 2, bubbleX - 5, currentY + 8);
-                g.drawLine(bubbleX - 5, currentY + 8, bubbleX, currentY + 12);
+                g.setColor(0xDFE5E7);
+                g.fillRoundRect(18, 6, avatarH, avatarH, 6, 6);
             }
 
-            int contentY = currentY + 4;
+            // Contact / Group Subject Name
+            Font fontName = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+            g.setFont(fontName);
+            g.setColor(0xFFFFFF);
+            String title = chatName != null ? chatName : "Chat";
+            if (title.length() > 16) title = title.substring(0, 14) + "...";
+            g.drawString(title, 46, 5, Graphics.TOP | Graphics.LEFT);
 
-            // In Group Chat: draw participant sender name in color!
-            if (showSenderHeader) {
-                int cIdx = Math.abs(participant.hashCode()) % GROUP_COLORS.length;
-                g.setColor(GROUP_COLORS[cIdx]);
-                g.setFont(fontSender);
-                g.drawString(participant, bubbleX + 8, contentY, Graphics.TOP | Graphics.LEFT);
-                contentY += senderHeaderH;
-            }
-
-            // Media Preview Indicators
-            if (isPhoto && imgCamera != null) {
-                g.drawImage(imgCamera, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
-                g.setColor(COLOR_TEXT);
-                g.setFont(fontSmall);
-                g.drawString("Photo", bubbleX + 26, contentY, Graphics.TOP | Graphics.LEFT);
-                contentY += 14;
-            } else if (isVoice && imgMic != null) {
-                g.drawImage(imgMic, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
-                g.setColor(COLOR_TEXT);
-                g.setFont(fontSmall);
-                g.drawString("Voice note (0:15)", bubbleX + 24, contentY, Graphics.TOP | Graphics.LEFT);
-                contentY += 14;
-            }
-
-            // Text lines
-            g.setColor(COLOR_TEXT);
+            // Subtitle (online status / group indicator)
+            Font fontSmall = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
             g.setFont(fontSmall);
-            for (int l = 0; l < lines.size(); l++) {
-                g.drawString((String) lines.elementAt(l), bubbleX + 8, contentY + (l * lineHeight), Graphics.TOP | Graphics.LEFT);
+            g.setColor(COLOR_STATUS_TEXT);
+            g.drawString(isGroup ? "Group info" : "online", 46, 19, Graphics.TOP | Graphics.LEFT);
+
+            // Header right 3-dots menu
+            g.setColor(0xFFFFFF);
+            g.fillRect(w - 12, 11, 2, 2);
+            g.fillRect(w - 12, 16, 2, 2);
+            g.fillRect(w - 12, 21, 2, 2);
+
+            // 2. Bottom Softkey Bar (20px)
+            int softkeyH = 20;
+            int softkeyY = h - softkeyH;
+            g.setColor(COLOR_BOTTOM_BAR);
+            g.fillRect(0, softkeyY, w, softkeyH);
+
+            g.setFont(fontArrow);
+            g.setColor(0xDFE5E7);
+            g.drawString("Options", 8, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
+            g.setColor(0x25D366);
+            g.drawString("Type / Send", w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
+            g.setColor(0xDFE5E7);
+            g.drawString("Back", w - 8, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
+
+            // 3. Conversation Area with Wallpaper
+            int clipTop = headerH;
+            int clipHeight = softkeyY - clipTop;
+
+            int origClipX = g.getClipX();
+            int origClipY = g.getClipY();
+            int origClipW = g.getClipWidth();
+            int origClipH = g.getClipHeight();
+
+            if (w > 0 && clipHeight > 0) {
+                g.setClip(0, clipTop, w, clipHeight);
             }
 
-            // Timestamp at bottom-right
-            int metaY = currentY + bubbleContentH - 12;
-            g.setColor(COLOR_TIME);
-            g.drawString("11:35", bubbleX + bubbleW - (fromMe ? 28 : 12), metaY, Graphics.TOP | Graphics.RIGHT);
-
-            // Double Blue Tick for outgoing messages
-            if (fromMe) {
-                if (imgTickBlue != null) {
-                    g.drawImage(imgTickBlue, bubbleX + bubbleW - 14, metaY + 2, Graphics.TOP | Graphics.LEFT);
-                } else if (imgTickDouble != null) {
-                    g.drawImage(imgTickDouble, bubbleX + bubbleW - 14, metaY + 2, Graphics.TOP | Graphics.LEFT);
+            // Seamless tile authentic WhatsApp doodle wallpaper
+            if (imgDoodle != null) {
+                int dw = imgDoodle.getWidth();
+                int dh = imgDoodle.getHeight();
+                for (int dy = clipTop; dy < softkeyY; dy += dh) {
+                    for (int dx = 0; dx < w; dx += dw) {
+                        g.drawImage(imgDoodle, dx, dy, Graphics.TOP | Graphics.LEFT);
+                    }
                 }
+            } else {
+                g.setColor(0xECE5DD);
+                g.fillRect(0, clipTop, w, clipHeight);
             }
 
-            currentY += bubbleContentH + 6;
-        }
+            int currentY = clipTop + 8 - scrollY;
 
-        totalContentHeight = (currentY + scrollY) - (clipTop + 8);
-        g.setClip(0, 0, w, h);
+            // Date Separator Pill: TODAY
+            int pillW = 60;
+            int pillH = 16;
+            int pillX = (w - pillW) / 2;
+            g.setColor(COLOR_DATE_PILL_BG);
+            g.fillRoundRect(pillX, currentY, pillW, pillH, 8, 8);
+            g.setColor(COLOR_DATE_PILL_TEXT);
+            g.setFont(fontSmall);
+            g.drawString("TODAY", pillX + 12, currentY + 2, Graphics.TOP | Graphics.LEFT);
+
+            currentY += pillH + 10;
+
+            int maxBubbleWidth = (w * 78) / 100;
+
+            if (messages.size() == 0) {
+                g.setColor(COLOR_DATE_PILL_TEXT);
+                g.drawString("Messages are end-to-end encrypted", w / 2, currentY + 30, Graphics.TOP | Graphics.HCENTER);
+                g.drawString("Press Center key to type a message", w / 2, currentY + 50, Graphics.TOP | Graphics.HCENTER);
+            }
+
+            Font fontSender = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+
+            for (int i = 0; i < messages.size(); i++) {
+                Hashtable msg = (Hashtable) messages.elementAt(i);
+                boolean fromMe = MiniJson.getBoolean(msg, "fromMe", false);
+                String text = MiniJson.getString(msg, "text", "");
+                String participant = MiniJson.getString(msg, "participantName", "Participant");
+                boolean isPhoto = MiniJson.getBoolean(msg, "isPhoto", false);
+                boolean isVoice = MiniJson.getBoolean(msg, "isVoice", false);
+
+                boolean showSenderHeader = isGroup && !fromMe;
+                int senderHeaderH = showSenderHeader ? 14 : 0;
+
+                Vector lines = wrapText(text, maxBubbleWidth - 16, fontSmall);
+                int lineHeight = fontSmall.getHeight();
+                int bubbleContentH = (lines.size() * lineHeight) + 16 + senderHeaderH;
+                if (isPhoto || isVoice) bubbleContentH += 14;
+
+                int bubbleW = 0;
+                if (showSenderHeader) {
+                    bubbleW = fontSender.stringWidth(participant);
+                }
+                for (int l = 0; l < lines.size(); l++) {
+                    int lw = fontSmall.stringWidth((String) lines.elementAt(l));
+                    if (lw > bubbleW) bubbleW = lw;
+                }
+                bubbleW = Math.max(bubbleW + 28, 80);
+
+                int bubbleX;
+                if (fromMe) {
+                    bubbleX = w - bubbleW - 10;
+                    // Outgoing Olive Green Bubble
+                    g.setColor(COLOR_BUBBLE_OUT);
+                    g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
+                    g.setColor(COLOR_BORDER_OUT);
+                    g.drawRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
+
+                    // Speech Tail pointing right
+                    g.setColor(COLOR_BUBBLE_OUT);
+                    g.fillTriangle(bubbleX + bubbleW, currentY + 2, bubbleX + bubbleW + 5, currentY + 8, bubbleX + bubbleW, currentY + 12);
+                    g.setColor(COLOR_BORDER_OUT);
+                    g.drawLine(bubbleX + bubbleW, currentY + 2, bubbleX + bubbleW + 5, currentY + 8);
+                    g.drawLine(bubbleX + bubbleW + 5, currentY + 8, bubbleX + bubbleW, currentY + 12);
+                } else {
+                    bubbleX = 10;
+                    // Incoming White Bubble
+                    g.setColor(COLOR_BUBBLE_IN);
+                    g.fillRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
+                    g.setColor(COLOR_BORDER_IN);
+                    g.drawRoundRect(bubbleX, currentY, bubbleW, bubbleContentH, 8, 8);
+
+                    // Speech Tail pointing left
+                    g.setColor(COLOR_BUBBLE_IN);
+                    g.fillTriangle(bubbleX, currentY + 2, bubbleX - 5, currentY + 8, bubbleX, currentY + 12);
+                    g.setColor(COLOR_BORDER_IN);
+                    g.drawLine(bubbleX, currentY + 2, bubbleX - 5, currentY + 8);
+                    g.drawLine(bubbleX - 5, currentY + 8, bubbleX, currentY + 12);
+                }
+
+                int contentY = currentY + 4;
+
+                // In Group Chat: draw participant sender name in color!
+                if (showSenderHeader) {
+                    int cIdx = Math.abs(participant.hashCode()) % GROUP_COLORS.length;
+                    g.setColor(GROUP_COLORS[cIdx]);
+                    g.setFont(fontSender);
+                    g.drawString(participant, bubbleX + 8, contentY, Graphics.TOP | Graphics.LEFT);
+                    contentY += senderHeaderH;
+                }
+
+                // Media Preview Indicators
+                if (isPhoto && imgCamera != null) {
+                    g.drawImage(imgCamera, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
+                    g.setColor(COLOR_TEXT);
+                    g.setFont(fontSmall);
+                    g.drawString("Photo", bubbleX + 26, contentY, Graphics.TOP | Graphics.LEFT);
+                    contentY += 14;
+                } else if (isVoice && imgMic != null) {
+                    g.drawImage(imgMic, bubbleX + 8, contentY + 1, Graphics.TOP | Graphics.LEFT);
+                    g.setColor(COLOR_TEXT);
+                    g.setFont(fontSmall);
+                    g.drawString("Voice note (0:15)", bubbleX + 24, contentY, Graphics.TOP | Graphics.LEFT);
+                    contentY += 14;
+                }
+
+                // Text lines
+                g.setColor(COLOR_TEXT);
+                g.setFont(fontSmall);
+                for (int l = 0; l < lines.size(); l++) {
+                    g.drawString((String) lines.elementAt(l), bubbleX + 8, contentY + (l * lineHeight), Graphics.TOP | Graphics.LEFT);
+                }
+
+                // Timestamp at bottom-right
+                int metaY = currentY + bubbleContentH - 12;
+                g.setColor(COLOR_TIME);
+                g.drawString("11:35", bubbleX + bubbleW - (fromMe ? 28 : 12), metaY, Graphics.TOP | Graphics.RIGHT);
+
+                // Double Blue Tick for outgoing messages
+                if (fromMe) {
+                    if (imgTickBlue != null) {
+                        g.drawImage(imgTickBlue, bubbleX + bubbleW - 14, metaY + 2, Graphics.TOP | Graphics.LEFT);
+                    } else if (imgTickDouble != null) {
+                        g.drawImage(imgTickDouble, bubbleX + bubbleW - 14, metaY + 2, Graphics.TOP | Graphics.LEFT);
+                    }
+                }
+
+                currentY += bubbleContentH + 6;
+            }
+
+            totalContentHeight = (currentY + scrollY) - (clipTop + 8);
+            g.setClip(origClipX, origClipY, origClipW, origClipH);
+        } catch (Throwable t) {
+            // Guarantee paint never crashes
+        }
     }
 
     private Vector wrapText(String text, int maxWidth, Font font) {
@@ -346,6 +358,8 @@ public class ConversationCanvas extends Canvas implements CommandListener {
             lines.addElement("");
             return lines;
         }
+
+        if (maxWidth < 20) maxWidth = 100;
 
         int start = 0;
         int len = text.length();
@@ -370,8 +384,10 @@ public class ConversationCanvas extends Canvas implements CommandListener {
                 lines.addElement(text.substring(start, spaceIdx));
                 start = spaceIdx + 1;
             } else {
-                lines.addElement(text.substring(start, start + count - 1));
-                start += (count - 1);
+                int end = Math.max(start + 1, start + count - 1);
+                if (end > len) end = len;
+                lines.addElement(text.substring(start, end));
+                start = end;
             }
         }
         return lines;

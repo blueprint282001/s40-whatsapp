@@ -56,47 +56,53 @@ public class SettingsScreen extends Form implements CommandListener, ItemStateLi
         super("WhatsApp Settings");
         this.midlet = midlet;
 
-        // 1. Profile Section
-        append("--- [ PROFILE ] ---");
-        txtProfileName = new TextField("Profile Name:", "Nokia User", 35, TextField.ANY);
-        append(txtProfileName);
+        try {
+            // 1. Profile Section
+            append(new StringItem(null, "--- [ PROFILE ] ---"));
+            txtProfileName = new TextField("Profile Name:", "Nokia User", 35, TextField.ANY);
+            append(txtProfileName);
 
-        choiceStatus = new ChoiceGroup("Status:", Choice.POPUP, STATUS_PRESETS, null);
-        choiceStatus.setSelectedIndex(0, true);
-        append(choiceStatus);
+            choiceStatus = new ChoiceGroup("Status:", Choice.EXCLUSIVE, STATUS_PRESETS, null);
+            try {
+                choiceStatus.setSelectedIndex(0, true);
+            } catch (Throwable t) {}
+            append(choiceStatus);
 
-        txtCustomStatus = new TextField("Custom Status:", "Hey there! I am using WhatsApp.", 140, TextField.ANY);
-        append(txtCustomStatus);
+            txtCustomStatus = new TextField("Custom Status:", "Hey there! I am using WhatsApp.", 140, TextField.ANY);
+            append(txtCustomStatus);
 
-        lblConnectedPhone = new StringItem("Account:", "Loading...");
-        append(lblConnectedPhone);
+            lblConnectedPhone = new StringItem("Account:", "Loading...");
+            append(lblConnectedPhone);
 
-        // 2. Server & Cloud Link Section
-        append("--- [ NETWORK ] ---");
-        txtServerUrl = new TextField("Server URL:", midlet.getServerUrl(), 140, TextField.URL);
-        append(txtServerUrl);
+            // 2. Server & Cloud Link Section
+            append(new StringItem(null, "--- [ NETWORK ] ---"));
+            txtServerUrl = new TextField("Server URL:", midlet.getServerUrl(), 140, TextField.ANY);
+            append(txtServerUrl);
 
-        // 3. About Section
-        append("--- [ ABOUT ] ---");
-        lblAbout = new StringItem("WhatsApp S40", 
-            "Version: 2.16.5\n" +
-            "Architecture: CLDC 1.1 / MIDP 2.0\n" +
-            "Multi-Device Cloud Link: Active\n" +
-            "(c) 2011-2026 WhatsApp Inc.");
-        append(lblAbout);
+            // 3. About Section
+            append(new StringItem(null, "--- [ ABOUT ] ---"));
+            lblAbout = new StringItem("WhatsApp S40", 
+                "Version: 2.16.5\n" +
+                "Architecture: CLDC 1.1 / MIDP 2.0\n" +
+                "Multi-Device Cloud Link: Active\n" +
+                "(c) 2011-2026 WhatsApp Inc.");
+            append(lblAbout);
 
-        cmdSave = new Command("Save", Command.OK, 1);
-        cmdTestConn = new Command("Test Conn", Command.ITEM, 2);
-        cmdBack = new Command("Back", Command.BACK, 3);
+            cmdSave = new Command("Save", Command.OK, 1);
+            cmdTestConn = new Command("Test Conn", Command.ITEM, 2);
+            cmdBack = new Command("Back", Command.BACK, 3);
 
-        addCommand(cmdSave);
-        addCommand(cmdTestConn);
-        addCommand(cmdBack);
+            addCommand(cmdSave);
+            addCommand(cmdTestConn);
+            addCommand(cmdBack);
 
-        setCommandListener(this);
-        setItemStateListener(this);
+            setCommandListener(this);
+            setItemStateListener(this);
 
-        fetchProfile();
+            fetchProfile();
+        } catch (Throwable t) {
+            // Guarantee constructor never throws uncaught exception
+        }
     }
 
     private void fetchProfile() {

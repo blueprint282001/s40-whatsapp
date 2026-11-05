@@ -203,108 +203,120 @@ public class ChatListCanvas extends Canvas implements CommandListener {
     }
 
     protected void paint(Graphics g) {
-        int w = getWidth();
-        int h = getHeight();
+        try {
+            int w = getWidth();
+            int h = getHeight();
 
-        // 1. WhatsApp Signature Header (32px)
-        int headerH = 32;
-        g.setColor(COLOR_HEADER_BG);
-        g.fillRect(0, 0, w, headerH);
+            // 1. WhatsApp Signature Header (32px)
+            int headerH = 32;
+            g.setColor(COLOR_HEADER_BG);
+            g.fillRect(0, 0, w, headerH);
 
-        // Official WhatsApp Logo Icon
-        if (imgHeaderLogo != null) {
-            g.drawImage(imgHeaderLogo, 8, 6, Graphics.TOP | Graphics.LEFT);
-        }
+            // Official WhatsApp Logo Icon
+            if (imgHeaderLogo != null) {
+                g.drawImage(imgHeaderLogo, 8, 6, Graphics.TOP | Graphics.LEFT);
+            }
 
-        // WhatsApp Brand Title
-        Font fontTitle = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
-        g.setFont(fontTitle);
-        g.setColor(0xFFFFFF);
-        g.drawString("WhatsApp", imgHeaderLogo != null ? 32 : 10, 7, Graphics.TOP | Graphics.LEFT);
-
-        // Search 🔍 Icon on Right
-        int searchX = w - 30;
-        int searchY = 10;
-        g.setColor(0xFFFFFF);
-        g.drawArc(searchX, searchY, 7, 7, 0, 360);
-        g.drawLine(searchX + 6, searchY + 6, searchX + 10, searchY + 10);
-
-        // Menu 3-dots icon
-        g.fillRect(w - 12, 10, 2, 2);
-        g.fillRect(w - 12, 15, 2, 2);
-        g.fillRect(w - 12, 20, 2, 2);
-
-        // 2. Tab Bar: CHATS | CONTACTS | STATUS (24px)
-        int tabH = 24;
-        int tabY = headerH;
-        g.setColor(COLOR_TAB_BG);
-        g.fillRect(0, tabY, w, tabH);
-
-        Font fontTab = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-        g.setFont(fontTab);
-
-        int tabColW = w / 3;
-
-        // Tab 0: CHATS
-        int t0X = tabColW / 2;
-        g.setColor(activeTab == 0 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
-        g.drawString("CHATS", t0X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
-        if (activeTab == 0) {
+            // WhatsApp Brand Title
+            Font fontTitle = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
+            g.setFont(fontTitle);
             g.setColor(0xFFFFFF);
-            g.fillRect(4, tabY + tabH - 3, tabColW - 8, 3);
-        }
+            g.drawString("WhatsApp", imgHeaderLogo != null ? 32 : 10, 7, Graphics.TOP | Graphics.LEFT);
 
-        // Tab 1: CONTACTS
-        int t1X = tabColW + (tabColW / 2);
-        g.setColor(activeTab == 1 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
-        g.drawString("CONTACTS", t1X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
-        if (activeTab == 1) {
+            // Search 🔍 Icon on Right
+            int searchX = w - 30;
+            int searchY = 10;
             g.setColor(0xFFFFFF);
-            g.fillRect(tabColW + 4, tabY + tabH - 3, tabColW - 8, 3);
+            g.drawArc(searchX, searchY, 7, 7, 0, 360);
+            g.drawLine(searchX + 6, searchY + 6, searchX + 10, searchY + 10);
+
+            // Menu 3-dots icon
+            g.fillRect(w - 12, 10, 2, 2);
+            g.fillRect(w - 12, 15, 2, 2);
+            g.fillRect(w - 12, 20, 2, 2);
+
+            // 2. Tab Bar: CHATS | CONTACTS | STATUS (24px)
+            int tabH = 24;
+            int tabY = headerH;
+            g.setColor(COLOR_TAB_BG);
+            g.fillRect(0, tabY, w, tabH);
+
+            Font fontTab = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
+            g.setFont(fontTab);
+
+            int tabColW = w / 3;
+
+            // Tab 0: CHATS
+            int t0X = tabColW / 2;
+            g.setColor(activeTab == 0 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
+            g.drawString("CHATS", t0X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
+            if (activeTab == 0) {
+                g.setColor(0xFFFFFF);
+                g.fillRect(4, tabY + tabH - 3, tabColW - 8, 3);
+            }
+
+            // Tab 1: CONTACTS
+            int t1X = tabColW + (tabColW / 2);
+            g.setColor(activeTab == 1 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
+            g.drawString("CONTACTS", t1X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
+            if (activeTab == 1) {
+                g.setColor(0xFFFFFF);
+                g.fillRect(tabColW + 4, tabY + tabH - 3, tabColW - 8, 3);
+            }
+
+            // Tab 2: STATUS
+            int t2X = (2 * tabColW) + (tabColW / 2);
+            g.setColor(activeTab == 2 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
+            g.drawString("STATUS", t2X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
+            if (activeTab == 2) {
+                g.setColor(0xFFFFFF);
+                g.fillRect((2 * tabColW) + 4, tabY + tabH - 3, w - (2 * tabColW) - 8, 3);
+            }
+
+            // 3. Bottom Softkey Bar (20px)
+            int softkeyH = 20;
+            int softkeyY = h - softkeyH;
+            g.setColor(COLOR_BOTTOM_BAR);
+            g.fillRect(0, softkeyY, w, softkeyH);
+
+            g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
+            g.setColor(0xDFE5E7);
+            g.drawString("Options", 8, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
+            g.setColor(COLOR_BADGE);
+            String centerAction = activeTab == 0 ? "Open" : (activeTab == 1 ? "Chat" : "Edit");
+            g.drawString(centerAction, w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
+            g.setColor(0xDFE5E7);
+            g.drawString("Exit", w - 8, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
+
+            // 4. Content Area
+            int listTop = tabY + tabH;
+            int listHeight = softkeyY - listTop;
+
+            int origClipX = g.getClipX();
+            int origClipY = g.getClipY();
+            int origClipW = g.getClipWidth();
+            int origClipH = g.getClipHeight();
+
+            if (w > 0 && listHeight > 0) {
+                g.setClip(0, listTop, w, listHeight);
+            }
+
+            // Background
+            g.setColor(COLOR_BG);
+            g.fillRect(0, listTop, w, listHeight);
+
+            if (activeTab == 0) {
+                paintChatsTab(g, w, listTop, listHeight, softkeyY);
+            } else if (activeTab == 1) {
+                paintContactsTab(g, w, listTop, listHeight, softkeyY);
+            } else if (activeTab == 2) {
+                paintStatusTab(g, w, listTop, listHeight, softkeyY);
+            }
+
+            g.setClip(origClipX, origClipY, origClipW, origClipH);
+        } catch (Throwable t) {
+            // Safe fallback: never crash with IllegalArgumentException in paint
         }
-
-        // Tab 2: STATUS
-        int t2X = (2 * tabColW) + (tabColW / 2);
-        g.setColor(activeTab == 2 ? 0xFFFFFF : COLOR_TAB_INACTIVE);
-        g.drawString("STATUS", t2X, tabY + 4, Graphics.TOP | Graphics.HCENTER);
-        if (activeTab == 2) {
-            g.setColor(0xFFFFFF);
-            g.fillRect((2 * tabColW) + 4, tabY + tabH - 3, w - (2 * tabColW) - 8, 3);
-        }
-
-        // 3. Bottom Softkey Bar (20px)
-        int softkeyH = 20;
-        int softkeyY = h - softkeyH;
-        g.setColor(COLOR_BOTTOM_BAR);
-        g.fillRect(0, softkeyY, w, softkeyH);
-
-        g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));
-        g.setColor(0xDFE5E7);
-        g.drawString("Options", 8, softkeyY + 3, Graphics.TOP | Graphics.LEFT);
-        g.setColor(COLOR_BADGE);
-        String centerAction = activeTab == 0 ? "Open" : (activeTab == 1 ? "Chat" : "Edit");
-        g.drawString(centerAction, w / 2, softkeyY + 3, Graphics.TOP | Graphics.HCENTER);
-        g.setColor(0xDFE5E7);
-        g.drawString("Exit", w - 8, softkeyY + 3, Graphics.TOP | Graphics.RIGHT);
-
-        // 4. Content Area
-        int listTop = tabY + tabH;
-        int listHeight = softkeyY - listTop;
-        g.setClip(0, listTop, w, listHeight);
-
-        // Background
-        g.setColor(COLOR_BG);
-        g.fillRect(0, listTop, w, listHeight);
-
-        if (activeTab == 0) {
-            paintChatsTab(g, w, listTop, listHeight, softkeyY);
-        } else if (activeTab == 1) {
-            paintContactsTab(g, w, listTop, listHeight, softkeyY);
-        } else if (activeTab == 2) {
-            paintStatusTab(g, w, listTop, listHeight, softkeyY);
-        }
-
-        g.setClip(0, 0, w, h);
     }
 
     private void paintChatsTab(Graphics g, int w, int listTop, int listHeight, int softkeyY) {
@@ -356,7 +368,7 @@ public class ChatListCanvas extends Canvas implements CommandListener {
                 g.drawImage(imgAvatar, avatarX, avatarY, Graphics.TOP | Graphics.LEFT);
             } else {
                 g.setColor(isGroup ? COLOR_TAB_BG : 0xDFE5E7);
-                g.fillRoundRect(avatarX, avatarY, 32, 32, 32, 32);
+                g.fillRoundRect(avatarX, avatarY, 32, 32, 8, 8);
             }
 
             int textX = avatarX + 32 + 10;
@@ -401,7 +413,7 @@ public class ChatListCanvas extends Canvas implements CommandListener {
                 int badgeX = w - badgeSize - 8;
                 int badgeY = currentY + 24;
                 g.setColor(COLOR_BADGE);
-                g.fillRoundRect(badgeX, badgeY, badgeSize, badgeSize, badgeSize, badgeSize);
+                g.fillRoundRect(badgeX, badgeY, badgeSize, badgeSize, 6, 6);
                 g.setColor(0xFFFFFF);
                 g.setFont(fontName);
                 String unreadStr = String.valueOf(unread);
@@ -457,7 +469,7 @@ public class ChatListCanvas extends Canvas implements CommandListener {
                 g.drawImage(imgAvatar, avatarX, avatarY, Graphics.TOP | Graphics.LEFT);
             } else {
                 g.setColor(0xDFE5E7);
-                g.fillRoundRect(avatarX, avatarY, 32, 32, 32, 32);
+                g.fillRoundRect(avatarX, avatarY, 32, 32, 8, 8);
             }
 
             String name = MiniJson.getString(contact, "name", "Contact");
@@ -510,7 +522,7 @@ public class ChatListCanvas extends Canvas implements CommandListener {
             g.drawImage(imgAvatar, myAvX, myAvY, Graphics.TOP | Graphics.LEFT);
         } else {
             g.setColor(0xDFE5E7);
-            g.fillRoundRect(myAvX, myAvY, 32, 32, 32, 32);
+            g.fillRoundRect(myAvX, myAvY, 32, 32, 8, 8);
         }
 
         int textX = myAvX + 32 + 12;

@@ -26,29 +26,31 @@ public class PairingScreen extends Form implements CommandListener {
         super("Link WhatsApp");
         this.midlet = midlet;
 
-        append(new StringItem("Step 1:", "Enter your Android / iPhone WhatsApp number with country code:"));
+        try {
+            append(new StringItem("Step 1:", "Enter your Android / iPhone WhatsApp number with country code:"));
 
-        txtPhone = new TextField("Phone Number:", "91", 20, TextField.PHONENUMBER);
-        append(txtPhone);
+            txtPhone = new TextField("Phone Number:", "91", 20, TextField.ANY);
+            append(txtPhone);
 
-        lblCode = new StringItem("Link Code:", "(Press 'Get Code')");
-        append(lblCode);
+            lblCode = new StringItem("Link Code:", "(Press 'Get Code')");
+            append(lblCode);
 
-        lblInstructions = new StringItem("Instructions:", 
-            "1. Open WhatsApp on Android/iPhone\n" +
-            "2. Go to Linked Devices\n" +
-            "3. Tap 'Link with phone number'\n" +
-            "4. Enter the 8-digit code shown above.");
-        append(lblInstructions);
+            lblInstructions = new StringItem("Instructions:", 
+                "1. Open WhatsApp on Android/iPhone\n" +
+                "2. Go to Linked Devices\n" +
+                "3. Tap 'Link with phone number'\n" +
+                "4. Enter the 8-digit code shown above.");
+            append(lblInstructions);
 
-        cmdGetCode = new Command("Get Code", Command.ITEM, 1);
-        cmdCheckStatus = new Command("Check Link", Command.OK, 2);
-        cmdBack = new Command("Back", Command.BACK, 3);
+            cmdGetCode = new Command("Get Code", Command.ITEM, 1);
+            cmdCheckStatus = new Command("Check Link", Command.OK, 2);
+            cmdBack = new Command("Back", Command.BACK, 3);
 
-        addCommand(cmdGetCode);
-        addCommand(cmdCheckStatus);
-        addCommand(cmdBack);
-        setCommandListener(this);
+            addCommand(cmdGetCode);
+            addCommand(cmdCheckStatus);
+            addCommand(cmdBack);
+            setCommandListener(this);
+        } catch (Throwable t) {}
     }
 
     public void commandAction(Command c, Displayable d) {
